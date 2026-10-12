@@ -1,0 +1,25 @@
+# Dependencies
+**/node_modules/
+**/vendor/
+
+# Environment files
+**/.env
+**/.env.*
+!**/.env.example
+
+# Logs and caches
+**/*.log
+**/.phpunit.cache
+**/.vite/
+
+# Builds
+shop/backend/public/app/
+shop/backend/public/build/
+shop/backend/public/storage
+shop/backend/storage/*.key
+
+# System & IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
