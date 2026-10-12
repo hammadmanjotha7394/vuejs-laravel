@@ -14,6 +14,7 @@ class Cart extends Model
     protected $fillable = [
         'token',
         'user_id',
+        'coupon_code',
     ];
 
     public function user(): BelongsTo

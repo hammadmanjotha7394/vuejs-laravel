@@ -62,8 +62,11 @@ const handleQuickAction = (e) => {
     router.push(`/products/${props.product.slug}`)
   } else {
     // Quick Add to bag
-    cartStore.addItem(props.product, null, 1)
-    toastStore.success(`Added "${props.product.name}" to your bag`)
+    cartStore.addItem(props.product, null, 1).then((success) => {
+      if (success) {
+        cartStore.openDrawer()
+      }
+    })
   }
 }
 

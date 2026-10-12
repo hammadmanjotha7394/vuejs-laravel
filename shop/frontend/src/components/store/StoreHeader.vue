@@ -186,7 +186,7 @@ const mainMenuItems = computed(() => {
 
         <!-- Wishlist link with badge -->
         <RouterLink
-          to="/account/wishlist"
+          to="/wishlist"
           class="relative p-2 sm:p-2.5 rounded-full text-ink hover:text-brand hover:bg-surface transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand hidden sm:inline-flex"
           aria-label="View wishlist"
         >

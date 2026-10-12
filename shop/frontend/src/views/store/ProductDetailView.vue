@@ -275,16 +275,15 @@ const toggleWishlist = () => {
 }
 
 // Add to Cart
-const handleAddToCart = () => {
+const handleAddToCart = async () => {
   if (!inStock.value || !product.value) return
 
   isAddingToCart.value = true
   try {
-    cartStore.addItem(product.value, currentVariant.value, quantity.value)
-    toastStore.success(`Added ${quantity.value} × "${product.value.name}" to your bag`)
-    cartStore.openDrawer()
-  } catch (err) {
-    toastStore.error('Could not add item to bag.')
+    const success = await cartStore.addItem(product.value, currentVariant.value, quantity.value)
+    if (success) {
+      cartStore.openDrawer()
+    }
   } finally {
     isAddingToCart.value = false
   }

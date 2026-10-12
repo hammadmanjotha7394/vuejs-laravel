@@ -19,6 +19,8 @@ import ProductFormView from '@/views/admin/ProductFormView.vue'
 
 import CatalogView from '@/views/store/CatalogView.vue'
 import ProductDetailView from '@/views/store/ProductDetailView.vue'
+import CartView from '@/views/store/CartView.vue'
+import WishlistView from '@/views/store/WishlistView.vue'
 
 const routes = [
   // Storefront Layout Routes
@@ -60,6 +62,16 @@ const routes = [
         path: 'products/:slug',
         name: 'product.detail',
         component: ProductDetailView,
+      },
+      {
+        path: 'cart',
+        name: 'cart',
+        component: CartView,
+      },
+      {
+        path: 'wishlist',
+        name: 'wishlist',
+        component: WishlistView,
       },
       // 404 Catch-All inside Storefront Shell
       {

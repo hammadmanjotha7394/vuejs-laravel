@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
 import { useMenuStore } from '@/stores/menu'
 import { useCartStore } from '@/stores/cart'
+import { useWishlistStore } from '@/stores/wishlist'
 import GlobalLoadingBar from '@/components/ui/GlobalLoadingBar.vue'
 import ToastContainer from '@/components/ui/ToastContainer.vue'
 import ErrorBoundary from '@/components/ui/ErrorBoundary.vue'
@@ -12,10 +13,12 @@ import MobileDrawer from '@/components/store/MobileDrawer.vue'
 import SearchOverlay from '@/components/store/SearchOverlay.vue'
 import PopupManager from '@/components/store/PopupManager.vue'
 import MaintenanceOverlay from '@/components/store/MaintenanceOverlay.vue'
+import CartDrawer from '@/components/store/CartDrawer.vue'
 
 const settingsStore = useSettingsStore()
 const menuStore = useMenuStore()
 const cartStore = useCartStore()
+const wishlistStore = useWishlistStore()
 
 const mobileDrawerOpen = ref(false)
 const searchOverlayOpen = ref(false)
@@ -43,6 +46,8 @@ const handleCartClick = () => {
 onMounted(() => {
   settingsStore.fetchPublicSettings()
   menuStore.fetchMenus()
+  cartStore.fetchCart()
+  wishlistStore.fetchWishlist()
 })
 </script>
 
@@ -86,6 +91,9 @@ onMounted(() => {
 
     <!-- Active Marketing Popups Manager -->
     <PopupManager />
+
+    <!-- Slide-in Mini Cart Drawer -->
+    <CartDrawer />
 
     <!-- Global Floating Toast Notification Stack -->
     <ToastContainer />

@@ -264,7 +264,7 @@ onUnmounted(() => {
         <div class="p-4 border-t border-line bg-surface/50 space-y-2">
           <!-- Wishlist link -->
           <RouterLink
-            to="/account/wishlist"
+            to="/wishlist"
             @click="handleLinkClick"
             class="flex items-center justify-between py-2 px-3 rounded-lg text-xs font-medium text-ink hover:bg-white transition"
           >

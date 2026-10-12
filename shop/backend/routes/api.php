@@ -8,11 +8,13 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\PublicCategoryController;
 use App\Http\Controllers\Api\PublicMarketingController;
 use App\Http\Controllers\Api\PublicMenuController;
 use App\Http\Controllers\Api\PublicProductController;
 use App\Http\Controllers\Api\PublicSettingController;
+use App\Http\Controllers\Api\WishlistController;
 use Illuminate\Support\Facades\Route;
 
 // Public Health Check
@@ -45,6 +47,22 @@ Route::get('/hero-slides', [PublicMarketingController::class, 'heroSlides']);
 Route::get('/popups', [PublicMarketingController::class, 'popups']);
 Route::get('/reviews/featured', [PublicMarketingController::class, 'featuredReviews']);
 Route::post('/newsletter/subscribe', [PublicMarketingController::class, 'subscribe']);
+
+// Storefront Cart Operations (Server is source of truth for price & inventory)
+Route::get('/cart', [CartController::class, 'index']);
+Route::post('/cart/items', [CartController::class, 'store']);
+Route::put('/cart/items/{id}', [CartController::class, 'update']);
+Route::delete('/cart/items/{id}', [CartController::class, 'destroy']);
+Route::delete('/cart', [CartController::class, 'clear']);
+Route::post('/cart/coupon', [CartController::class, 'applyCoupon']);
+Route::delete('/cart/coupon', [CartController::class, 'removeCoupon']);
+Route::post('/cart/merge', [CartController::class, 'merge']);
+
+// Storefront Wishlist Operations (Guest sync & Authenticated tracking)
+Route::get('/wishlist', [WishlistController::class, 'index']);
+Route::post('/wishlist/toggle', [WishlistController::class, 'toggle']);
+Route::post('/wishlist/sync', [WishlistController::class, 'sync']);
+Route::delete('/wishlist/{productId}', [WishlistController::class, 'destroy']);
 
 // Guest Auth Routes
 Route::post('/register', [AuthController::class, 'register']);

@@ -41,6 +41,13 @@ export const useAuthStore = defineStore('auth', {
         await getCsrfCookie()
         const response = await apiClient.post('/login', credentials)
         this.setUser(response.data.user)
+
+        // Merge guest cart & sync guest wishlist
+        const { useCartStore } = await import('./cart')
+        const { useWishlistStore } = await import('./wishlist')
+        useCartStore().mergeGuestCart().catch(() => {})
+        useWishlistStore().syncFromGuestStorage().catch(() => {})
+
         return response.data
       } finally {
         this.isLoading = false
@@ -54,6 +61,13 @@ export const useAuthStore = defineStore('auth', {
         await getCsrfCookie()
         const response = await apiClient.post('/register', userData)
         this.setUser(response.data.user)
+
+        // Merge guest cart & sync guest wishlist
+        const { useCartStore } = await import('./cart')
+        const { useWishlistStore } = await import('./wishlist')
+        useCartStore().mergeGuestCart().catch(() => {})
+        useWishlistStore().syncFromGuestStorage().catch(() => {})
+
         return response.data
       } finally {
         this.isLoading = false
