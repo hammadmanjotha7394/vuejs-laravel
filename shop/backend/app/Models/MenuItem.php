@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\MenuService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,6 +21,9 @@ class MenuItem extends Model
         'url',
         'open_in_new_tab',
         'image',
+        'featured_title',
+        'featured_button_text',
+        'featured_button_url',
         'badge_text',
         'sort_order',
         'column_index',
@@ -34,6 +38,17 @@ class MenuItem extends Model
             'sort_order' => 'integer',
             'column_index' => 'integer',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saved(function () {
+            MenuService::clearCache();
+        });
+
+        static::deleted(function () {
+            MenuService::clearCache();
+        });
     }
 
     public function menu(): BelongsTo

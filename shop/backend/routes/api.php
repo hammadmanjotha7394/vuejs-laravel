@@ -1,10 +1,14 @@
 <?php
 
+use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\FinanceController;
+use App\Http\Controllers\Admin\MenuController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\PublicCategoryController;
+use App\Http\Controllers\Api\PublicMenuController;
 use App\Http\Controllers\Api\PublicSettingController;
 use Illuminate\Support\Facades\Route;
 
@@ -15,6 +19,15 @@ Route::get('/health', function () {
 
 // Public Storefront Settings (safe values only)
 Route::get('/public-settings', [PublicSettingController::class, 'index']);
+
+// Public Categories (Cached tree & single lookup)
+Route::get('/categories', [PublicCategoryController::class, 'index']);
+Route::get('/categories/{slug}', [PublicCategoryController::class, 'show']);
+
+// Public Menus & Mega Menu (Cached)
+Route::get('/menu/main', [PublicMenuController::class, 'show'])->defaults('slug', 'main');
+Route::get('/menu/footer', [PublicMenuController::class, 'show'])->defaults('slug', 'footer');
+Route::get('/menu/{slug}', [PublicMenuController::class, 'show']);
 
 // Guest Auth Routes
 Route::post('/register', [AuthController::class, 'register']);
@@ -60,5 +73,26 @@ Route::middleware('auth:sanctum')->group(function () {
         // Mail (SMTP) Settings & Testing
         Route::put('/settings/mail', [SettingController::class, 'updateMail'])->middleware('permission:mail.manage');
         Route::post('/settings/mail/test', [SettingController::class, 'testMail'])->middleware('permission:mail.manage');
+
+        // Categories CRUD & Reordering
+        Route::get('/categories', [CategoryController::class, 'index'])->middleware('permission:categories.manage');
+        Route::post('/categories', [CategoryController::class, 'store'])->middleware('permission:categories.manage');
+        Route::post('/categories/reorder', [CategoryController::class, 'reorder'])->middleware('permission:categories.manage');
+        Route::post('/categories/upload-image', [CategoryController::class, 'uploadImage'])->middleware('permission:categories.manage');
+        Route::get('/categories/{category}', [CategoryController::class, 'show'])->middleware('permission:categories.manage');
+        Route::put('/categories/{category}', [CategoryController::class, 'update'])->middleware('permission:categories.manage');
+        Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->middleware('permission:categories.manage');
+
+        // Menus & Mega Menu Builder
+        Route::get('/menus', [MenuController::class, 'index'])->middleware('permission:menus.manage');
+        Route::post('/menus', [MenuController::class, 'store'])->middleware('permission:menus.manage');
+        Route::post('/menus/upload-image', [MenuController::class, 'uploadImage'])->middleware('permission:menus.manage');
+        Route::get('/menus/{menu}', [MenuController::class, 'show'])->middleware('permission:menus.manage');
+        Route::put('/menus/{menu}', [MenuController::class, 'update'])->middleware('permission:menus.manage');
+        Route::delete('/menus/{menu}', [MenuController::class, 'destroy'])->middleware('permission:menus.manage');
+        Route::post('/menus/{menu}/items', [MenuController::class, 'storeItem'])->middleware('permission:menus.manage');
+        Route::put('/menus/items/{item}', [MenuController::class, 'updateItem'])->middleware('permission:menus.manage');
+        Route::delete('/menus/items/{item}', [MenuController::class, 'destroyItem'])->middleware('permission:menus.manage');
+        Route::post('/menus/{menu}/reorder', [MenuController::class, 'reorderItems'])->middleware('permission:menus.manage');
     });
 });

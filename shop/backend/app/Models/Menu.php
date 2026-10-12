@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\MenuService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -21,6 +22,17 @@ class Menu extends Model
         return [
             'is_active' => 'boolean',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saved(function () {
+            MenuService::clearCache();
+        });
+
+        static::deleted(function () {
+            MenuService::clearCache();
+        });
     }
 
     public function items(): HasMany

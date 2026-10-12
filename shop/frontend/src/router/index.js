@@ -10,6 +10,8 @@ import UsersView from '@/views/admin/UsersView.vue'
 import RolesView from '@/views/admin/RolesView.vue'
 import FinanceView from '@/views/admin/FinanceView.vue'
 import SettingsView from '@/views/admin/SettingsView.vue'
+import CategoriesView from '@/views/admin/CategoriesView.vue'
+import MenusView from '@/views/admin/MenusView.vue'
 
 const routes = [
   {
@@ -61,6 +63,18 @@ const routes = [
         name: 'admin.finance',
         component: FinanceView,
         meta: { permission: 'finance.view' },
+      },
+      {
+        path: 'categories',
+        name: 'admin.categories',
+        component: CategoriesView,
+        meta: { permission: 'categories.manage' },
+      },
+      {
+        path: 'menus',
+        name: 'admin.menus',
+        component: MenusView,
+        meta: { permission: 'menus.manage' },
       },
       {
         path: 'settings',

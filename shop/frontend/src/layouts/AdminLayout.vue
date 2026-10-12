@@ -7,6 +7,8 @@ import {
   Shield,
   CircleDollarSign,
   Settings as SettingsIcon,
+  FolderTree,
+  Compass,
   LogOut,
   Store,
   Menu,
@@ -41,6 +43,18 @@ const navItems = computed(() => {
       to: '/admin/roles',
       icon: Shield,
       visible: authStore.hasPermission('roles.manage'),
+    },
+    {
+      label: 'Categories',
+      to: '/admin/categories',
+      icon: FolderTree,
+      visible: authStore.hasPermission('categories.manage'),
+    },
+    {
+      label: 'Mega Menus',
+      to: '/admin/menus',
+      icon: Compass,
+      visible: authStore.hasPermission('menus.manage'),
     },
     {
       label: 'Finance Reports',
