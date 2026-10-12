@@ -14,6 +14,9 @@ class ProductImage extends Model
         'product_id',
         'variant_id',
         'path',
+        'thumb_path',
+        'medium_path',
+        'large_path',
         'external_url',
         'alt',
         'sort_order',
@@ -25,7 +28,7 @@ class ProductImage extends Model
         'sort_order' => 'integer',
     ];
 
-    protected $appends = ['url'];
+    protected $appends = ['url', 'thumb_url', 'medium_url', 'large_url'];
 
     public function product(): BelongsTo
     {
@@ -48,5 +51,32 @@ class ProductImage extends Model
         }
 
         return null;
+    }
+
+    public function getThumbUrlAttribute(): ?string
+    {
+        if (! empty($this->thumb_path)) {
+            return asset('storage/'.ltrim($this->thumb_path, '/'));
+        }
+
+        return $this->url;
+    }
+
+    public function getMediumUrlAttribute(): ?string
+    {
+        if (! empty($this->medium_path)) {
+            return asset('storage/'.ltrim($this->medium_path, '/'));
+        }
+
+        return $this->url;
+    }
+
+    public function getLargeUrlAttribute(): ?string
+    {
+        if (! empty($this->large_path)) {
+            return asset('storage/'.ltrim($this->large_path, '/'));
+        }
+
+        return $this->url;
     }
 }

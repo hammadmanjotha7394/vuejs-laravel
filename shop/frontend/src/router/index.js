@@ -12,6 +12,8 @@ import FinanceView from '@/views/admin/FinanceView.vue'
 import SettingsView from '@/views/admin/SettingsView.vue'
 import CategoriesView from '@/views/admin/CategoriesView.vue'
 import MenusView from '@/views/admin/MenusView.vue'
+import ProductsView from '@/views/admin/ProductsView.vue'
+import ProductFormView from '@/views/admin/ProductFormView.vue'
 
 const routes = [
   {
@@ -63,6 +65,24 @@ const routes = [
         name: 'admin.finance',
         component: FinanceView,
         meta: { permission: 'finance.view' },
+      },
+      {
+        path: 'products',
+        name: 'admin.products',
+        component: ProductsView,
+        meta: { permission: 'products.view' },
+      },
+      {
+        path: 'products/create',
+        name: 'admin.products.create',
+        component: ProductFormView,
+        meta: { permission: 'products.create' },
+      },
+      {
+        path: 'products/:id/edit',
+        name: 'admin.products.edit',
+        component: ProductFormView,
+        meta: { permission: 'products.update' },
       },
       {
         path: 'categories',

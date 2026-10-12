@@ -30,6 +30,7 @@ class Product extends Model
         'track_stock',
         'stock_qty',
         'low_stock_threshold',
+        'allow_backorder',
         'weight',
         'length',
         'width',
@@ -37,8 +38,12 @@ class Product extends Model
         'tax_class',
         'seo_title',
         'seo_description',
+        'seo_social_image',
         'video_url',
         'video_path',
+        'video_poster',
+        'related_products_json',
+        'frequently_bought_together_json',
     ];
 
     protected function casts(): array
@@ -46,11 +51,14 @@ class Product extends Model
         return [
             'is_featured' => 'boolean',
             'track_stock' => 'boolean',
+            'allow_backorder' => 'boolean',
             'base_price' => 'decimal:2',
             'compare_at_price' => 'decimal:2',
             'cost_price' => 'decimal:2',
             'stock_qty' => 'integer',
             'low_stock_threshold' => 'integer',
+            'related_products_json' => 'array',
+            'frequently_bought_together_json' => 'array',
         ];
     }
 

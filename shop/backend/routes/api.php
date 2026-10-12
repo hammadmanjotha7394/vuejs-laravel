@@ -3,12 +3,14 @@
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\FinanceController;
 use App\Http\Controllers\Admin\MenuController;
+use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PublicCategoryController;
 use App\Http\Controllers\Api\PublicMenuController;
+use App\Http\Controllers\Api\PublicProductController;
 use App\Http\Controllers\Api\PublicSettingController;
 use Illuminate\Support\Facades\Route;
 
@@ -28,6 +30,11 @@ Route::get('/categories/{slug}', [PublicCategoryController::class, 'show']);
 Route::get('/menu/main', [PublicMenuController::class, 'show'])->defaults('slug', 'main');
 Route::get('/menu/footer', [PublicMenuController::class, 'show'])->defaults('slug', 'footer');
 Route::get('/menu/{slug}', [PublicMenuController::class, 'show']);
+
+// Public Products Catalog, Details, and Suggestions
+Route::get('/products', [PublicProductController::class, 'index']);
+Route::get('/products/{slug}', [PublicProductController::class, 'show']);
+Route::get('/search/suggest', [PublicProductController::class, 'suggest']);
 
 // Guest Auth Routes
 Route::post('/register', [AuthController::class, 'register']);
@@ -94,5 +101,19 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/menus/items/{item}', [MenuController::class, 'updateItem'])->middleware('permission:menus.manage');
         Route::delete('/menus/items/{item}', [MenuController::class, 'destroyItem'])->middleware('permission:menus.manage');
         Route::post('/menus/{menu}/reorder', [MenuController::class, 'reorderItems'])->middleware('permission:menus.manage');
+
+        // Products Catalog & Advanced Features
+        Route::get('/products', [ProductController::class, 'index'])->middleware('permission:products.view');
+        Route::post('/products', [ProductController::class, 'store'])->middleware('permission:products.create');
+        Route::get('/products/export-csv', [ProductController::class, 'exportCsv'])->middleware('permission:products.view');
+        Route::post('/products/import-csv', [ProductController::class, 'importCsv'])->middleware('permission:products.create');
+        Route::post('/products/bulk-action', [ProductController::class, 'bulkAction'])->middleware('permission:products.update');
+        Route::post('/products/upload-image', [ProductController::class, 'uploadImage'])->middleware('permission:products.update');
+        Route::post('/products/upload-video', [ProductController::class, 'uploadVideo'])->middleware('permission:products.update');
+        Route::get('/products/{product}', [ProductController::class, 'show'])->middleware('permission:products.view');
+        Route::put('/products/{product}', [ProductController::class, 'update'])->middleware('permission:products.update');
+        Route::delete('/products/{product}', [ProductController::class, 'destroy'])->middleware('permission:products.delete');
+        Route::post('/products/{product}/duplicate', [ProductController::class, 'duplicate'])->middleware('permission:products.create');
+        Route::post('/products/{product}/variants/bulk-edit', [ProductController::class, 'bulkEditVariants'])->middleware('permission:products.update');
     });
 });

@@ -9,6 +9,7 @@ import {
   Settings as SettingsIcon,
   FolderTree,
   Compass,
+  Package,
   LogOut,
   Store,
   Menu,
@@ -43,6 +44,12 @@ const navItems = computed(() => {
       to: '/admin/roles',
       icon: Shield,
       visible: authStore.hasPermission('roles.manage'),
+    },
+    {
+      label: 'Products',
+      to: '/admin/products',
+      icon: Package,
+      visible: authStore.hasPermission('products.view'),
     },
     {
       label: 'Categories',
