@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\SettingService;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -25,6 +26,17 @@ class Setting extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::saved(function () {
+            SettingService::clearCache();
+        });
+
+        static::deleted(function () {
+            SettingService::clearCache();
+        });
+    }
+
     public function getDecryptedValue(): ?string
     {
         if (! $this->is_encrypted || empty($this->value)) {
@@ -40,19 +52,14 @@ class Setting extends Model
 
     public static function get(string $key, mixed $default = null): mixed
     {
-        $setting = static::where('key', $key)->first();
-        if (! $setting) {
-            return $default;
-        }
-
-        return $setting->getDecryptedValue() ?? $default;
+        return SettingService::get($key, $default);
     }
 
     public static function set(string $key, mixed $value, string $group = 'general', bool $isEncrypted = false): static
     {
         $storedValue = ($isEncrypted && ! empty($value)) ? Crypt::encryptString((string) $value) : $value;
 
-        return static::updateOrCreate(
+        $setting = static::updateOrCreate(
             ['key' => $key],
             [
                 'value' => $storedValue,
@@ -60,5 +67,9 @@ class Setting extends Model
                 'is_encrypted' => $isEncrypted,
             ]
         );
+
+        SettingService::clearCache();
+
+        return $setting;
     }
 }

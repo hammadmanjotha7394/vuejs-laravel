@@ -6,6 +6,7 @@ import {
   Users,
   Shield,
   CircleDollarSign,
+  Settings as SettingsIcon,
   LogOut,
   Store,
   Menu,
@@ -46,6 +47,12 @@ const navItems = computed(() => {
       to: '/admin/finance',
       icon: CircleDollarSign,
       visible: authStore.hasPermission('finance.view'),
+    },
+    {
+      label: 'Store Settings',
+      to: '/admin/settings',
+      icon: SettingsIcon,
+      visible: authStore.hasPermission('settings.view'),
     },
   ]
   return items.filter((item) => item.visible)

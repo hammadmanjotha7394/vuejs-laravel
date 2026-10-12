@@ -9,6 +9,7 @@ import DashboardView from '@/views/admin/DashboardView.vue'
 import UsersView from '@/views/admin/UsersView.vue'
 import RolesView from '@/views/admin/RolesView.vue'
 import FinanceView from '@/views/admin/FinanceView.vue'
+import SettingsView from '@/views/admin/SettingsView.vue'
 
 const routes = [
   {
@@ -60,6 +61,12 @@ const routes = [
         name: 'admin.finance',
         component: FinanceView,
         meta: { permission: 'finance.view' },
+      },
+      {
+        path: 'settings',
+        name: 'admin.settings',
+        component: SettingsView,
+        meta: { permission: 'settings.view' },
       },
     ],
   },
