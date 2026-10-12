@@ -21,7 +21,15 @@ class ProductService
     {
         $query = Product::query()
             ->whereIn('status', ['active', 'published'])
-            ->with(['primaryImage', 'images', 'brand', 'category']);
+            ->with(['primaryImage', 'images', 'brand', 'category'])
+            ->withCount('variants')
+            ->withCount('approvedReviews')
+            ->withAvg('approvedReviews', 'rating');
+
+        // Featured Filter
+        if (! empty($filters['featured']) && filter_var($filters['featured'], FILTER_VALIDATE_BOOLEAN)) {
+            $query->where('is_featured', true);
+        }
 
         // 1. Category Filter (including children)
         if (! empty($filters['category'])) {
@@ -134,6 +142,10 @@ class ProductService
             ? (int) round((($product->compare_at_price - $product->base_price) / $product->compare_at_price) * 100)
             : 0;
 
+        $rating = $product->approved_reviews_avg_rating ?? ($product->relationLoaded('approvedReviews') ? $product->approvedReviews->avg('rating') : $product->approvedReviews()->avg('rating')) ?: 5.0;
+        $reviewsCount = $product->approved_reviews_count ?? ($product->relationLoaded('approvedReviews') ? $product->approvedReviews->count() : $product->approvedReviews()->count());
+        $hasVariants = isset($product->variants_count) ? ($product->variants_count > 0) : ($product->relationLoaded('variants') ? $product->variants->isNotEmpty() : $product->variants()->exists());
+
         return [
             'id' => $product->id,
             'name' => $product->name,
@@ -144,6 +156,9 @@ class ProductService
             'is_on_sale' => $hasSale,
             'sale_percentage' => $salePercent,
             'is_featured' => (bool) $product->is_featured,
+            'has_variants' => (bool) $hasVariants,
+            'rating' => round((float) $rating, 1),
+            'reviews_count' => (int) $reviewsCount,
             'in_stock' => ! $product->track_stock || $product->stock_qty > 0,
             'primary_image' => $primaryImg ? [
                 'url' => $primaryImg->url,
@@ -154,9 +169,11 @@ class ProductService
             'second_image' => $secondImg ? [
                 'url' => $secondImg->url,
                 'thumb_url' => $secondImg->thumb_url,
+                'medium_url' => $secondImg->medium_url,
                 'alt' => $secondImg->alt,
             ] : null,
             'video_url' => $product->video_url ?: ($product->video_path ? asset('storage/'.$product->video_path) : null),
+            'video_poster' => $product->video_poster,
             'brand' => $product->brand ? ['name' => $product->brand->name, 'slug' => $product->brand->slug] : null,
             'category' => $product->category ? ['name' => $product->category->name, 'slug' => $product->category->slug] : null,
         ];

@@ -38,7 +38,9 @@ Route::get('/products/{slug}', [PublicProductController::class, 'show']);
 Route::get('/search/suggest', [PublicProductController::class, 'suggest']);
 
 // Public Marketing & Newsletter
+Route::get('/hero-slides', [PublicMarketingController::class, 'heroSlides']);
 Route::get('/popups', [PublicMarketingController::class, 'popups']);
+Route::get('/reviews/featured', [PublicMarketingController::class, 'featuredReviews']);
 Route::post('/newsletter/subscribe', [PublicMarketingController::class, 'subscribe']);
 
 // Guest Auth Routes

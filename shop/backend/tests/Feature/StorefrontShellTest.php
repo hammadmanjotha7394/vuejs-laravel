@@ -129,4 +129,57 @@ class StorefrontShellTest extends TestCase
             'is_active' => true,
         ]);
     }
+
+    public function test_public_hero_slides_endpoint_returns_active_slides(): void
+    {
+        $response = $this->getJson('/api/hero-slides');
+
+        $response->assertStatus(200);
+        $response->assertJsonStructure([
+            'data' => [
+                '*' => [
+                    'id',
+                    'title',
+                    'subtitle',
+                    'button_text',
+                    'button_url',
+                    'image_desktop',
+                    'image_mobile',
+                    'text_position',
+                    'overlay_opacity',
+                    'sort_order',
+                ],
+            ],
+        ]);
+
+        $this->assertNotEmpty($response->json('data'));
+    }
+
+    public function test_featured_reviews_endpoint_returns_high_rated_reviews(): void
+    {
+        $response = $this->getJson('/api/reviews/featured');
+
+        $response->assertStatus(200);
+        $response->assertJsonStructure([
+            'data' => [
+                '*' => [
+                    'id',
+                    'author_name',
+                    'rating',
+                    'title',
+                    'body',
+                    'product' => [
+                        'name',
+                        'slug',
+                    ],
+                ],
+            ],
+        ]);
+
+        $data = $response->json('data');
+        $this->assertNotEmpty($data);
+        foreach ($data as $r) {
+            $this->assertGreaterThanOrEqual(4, $r['rating']);
+        }
+    }
 }
