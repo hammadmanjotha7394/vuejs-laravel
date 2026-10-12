@@ -1,9 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import StoreLayout from '@/layouts/StoreLayout.vue'
 import HomeView from '@/views/store/HomeView.vue'
 import LoginView from '@/views/auth/LoginView.vue'
 import RegisterView from '@/views/auth/RegisterView.vue'
 import ForbiddenView from '@/views/ForbiddenView.vue'
+import NotFoundView from '@/views/NotFoundView.vue'
 import AdminLayout from '@/layouts/AdminLayout.vue'
 import DashboardView from '@/views/admin/DashboardView.vue'
 import UsersView from '@/views/admin/UsersView.vue'
@@ -16,11 +18,26 @@ import ProductsView from '@/views/admin/ProductsView.vue'
 import ProductFormView from '@/views/admin/ProductFormView.vue'
 
 const routes = [
+  // Storefront Layout Routes
   {
     path: '/',
-    name: 'home',
-    component: HomeView,
+    component: StoreLayout,
+    children: [
+      {
+        path: '',
+        name: 'home',
+        component: HomeView,
+      },
+      // 404 Catch-All inside Storefront Shell
+      {
+        path: ':pathMatch(.*)*',
+        name: 'not-found',
+        component: NotFoundView,
+      },
+    ],
   },
+
+  // Standalone Auth & System Routes
   {
     path: '/login',
     name: 'login',
@@ -38,6 +55,8 @@ const routes = [
     name: 'forbidden',
     component: ForbiddenView,
   },
+
+  // Admin Dashboard Routes
   {
     path: '/admin',
     component: AdminLayout,
@@ -109,7 +128,10 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
-  scrollBehavior() {
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) {
+      return savedPosition
+    }
     return { top: 0 }
   },
 })

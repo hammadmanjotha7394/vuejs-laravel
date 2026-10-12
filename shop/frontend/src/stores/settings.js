@@ -12,9 +12,21 @@ export const useSettingsStore = defineStore('settings', {
   getters: {
     brandColor: (state) => state.publicSettings?.general?.brand_color || '#2F5D50',
     siteName: (state) => state.publicSettings?.general?.site_name || 'Boutique',
+    logoUrl: (state) => state.publicSettings?.general?.logo_url || null,
     currencySymbol: (state) => state.publicSettings?.general?.currency_symbol || '$',
     currencyCode: (state) => state.publicSettings?.general?.currency_code || 'USD',
     announcement: (state) => state.publicSettings?.announcement || null,
+    socialLinks: (state) => state.publicSettings?.social_links || {},
+    headerFooter: (state) => state.publicSettings?.header_footer || {},
+    maintenanceMode: (state) => Boolean(state.publicSettings?.store?.maintenance_mode),
+    maintenanceMessage: (state) =>
+      state.publicSettings?.store?.maintenance_message ||
+      'We are currently performing scheduled maintenance. Please check back shortly.',
+    formatPrice: (state) => (val) => {
+      const num = Number(val) || 0
+      const sym = state.publicSettings?.general?.currency_symbol || '$'
+      return `${sym}${num.toFixed(2)}`
+    },
   },
 
   actions: {

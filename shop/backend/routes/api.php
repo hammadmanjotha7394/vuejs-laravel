@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PublicCategoryController;
+use App\Http\Controllers\Api\PublicMarketingController;
 use App\Http\Controllers\Api\PublicMenuController;
 use App\Http\Controllers\Api\PublicProductController;
 use App\Http\Controllers\Api\PublicSettingController;
@@ -35,6 +36,10 @@ Route::get('/menu/{slug}', [PublicMenuController::class, 'show']);
 Route::get('/products', [PublicProductController::class, 'index']);
 Route::get('/products/{slug}', [PublicProductController::class, 'show']);
 Route::get('/search/suggest', [PublicProductController::class, 'suggest']);
+
+// Public Marketing & Newsletter
+Route::get('/popups', [PublicMarketingController::class, 'popups']);
+Route::post('/newsletter/subscribe', [PublicMarketingController::class, 'subscribe']);
 
 // Guest Auth Routes
 Route::post('/register', [AuthController::class, 'register']);
