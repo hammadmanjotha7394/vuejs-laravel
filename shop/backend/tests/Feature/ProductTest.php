@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Review;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -342,5 +343,49 @@ class ProductTest extends TestCase
         $sortData = $sortResponse->json('data');
         $this->assertNotEmpty($sortData);
         $this->assertGreaterThanOrEqual($sortData[count($sortData) - 1]['rating'], $sortData[0]['rating']);
+    }
+
+    public function test_customer_can_submit_product_review(): void
+    {
+        $product = Product::whereIn('status', ['active', 'published'])->first();
+        $this->assertNotNull($product);
+
+        $response = $this->postJson("/api/products/{$product->id}/reviews", [
+            'rating' => 5,
+            'title' => 'Stunning linen texture',
+            'body' => 'Genuinely surprised by the substantial weight and breathable finish of this garment.',
+            'author_name' => 'Sara Jenkins',
+        ]);
+
+        $response->assertStatus(201);
+        $response->assertJsonStructure([
+            'message',
+            'data' => [
+                'id',
+                'author_name',
+                'rating',
+                'title',
+                'body',
+            ],
+        ]);
+
+        $this->assertDatabaseHas('reviews', [
+            'product_id' => $product->id,
+            'title' => 'Stunning linen texture',
+            'rating' => 5,
+        ]);
+    }
+
+    public function test_customer_can_vote_review_helpful(): void
+    {
+        $review = Review::where('is_approved', true)->first();
+        $this->assertNotNull($review);
+
+        $initialCount = $review->helpful_count;
+
+        $response = $this->postJson("/api/reviews/{$review->id}/helpful");
+
+        $response->assertStatus(200);
+        $this->assertEquals($initialCount + 1, $response->json('helpful_count'));
     }
 }

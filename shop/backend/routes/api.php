@@ -37,6 +37,8 @@ Route::get('/products', [PublicProductController::class, 'index']);
 Route::get('/products/{slug}', [PublicProductController::class, 'show']);
 Route::get('/search/suggest', [PublicProductController::class, 'suggest']);
 Route::get('/catalog/filters', [PublicProductController::class, 'filters']);
+Route::post('/products/{id}/reviews', [PublicProductController::class, 'storeReview']);
+Route::post('/reviews/{id}/helpful', [PublicProductController::class, 'voteHelpful']);
 
 // Public Marketing & Newsletter
 Route::get('/hero-slides', [PublicMarketingController::class, 'heroSlides']);

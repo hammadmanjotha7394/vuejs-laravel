@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { Heart, Star, ShoppingBag, ArrowRight, Play } from 'lucide-vue-next'
 import { useWishlistStore } from '@/stores/wishlist'
 import { useCartStore } from '@/stores/cart'
@@ -18,6 +18,7 @@ const wishlistStore = useWishlistStore()
 const cartStore = useCartStore()
 const toastStore = useToastStore()
 const settingsStore = useSettingsStore()
+const router = useRouter()
 
 const videoRef = ref(null)
 const isVideoLoaded = ref(false)
@@ -58,7 +59,7 @@ const handleQuickAction = (e) => {
 
   if (props.product.has_variants) {
     // Navigate to product page for option selection
-    window.location.href = `/products/${props.product.slug}`
+    router.push(`/products/${props.product.slug}`)
   } else {
     // Quick Add to bag
     cartStore.addItem(props.product, null, 1)

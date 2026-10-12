@@ -395,6 +395,15 @@ class ProductService
                     'count' => $reviewCount,
                     'breakdown' => $ratingBreakdown,
                 ],
+                'reviews' => $reviews->map(fn ($r) => [
+                    'id' => $r->id,
+                    'author_name' => $r->author_name,
+                    'rating' => (int) $r->rating,
+                    'title' => $r->title,
+                    'body' => $r->body,
+                    'review_date' => $r->review_date ? $r->review_date->format('M d, Y') : ($r->created_at ? $r->created_at->format('M d, Y') : null),
+                    'helpful_count' => (int) $r->helpful_count,
+                ]),
             ],
             'related_products' => $relatedProducts,
         ];
