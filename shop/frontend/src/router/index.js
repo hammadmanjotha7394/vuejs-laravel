@@ -17,6 +17,8 @@ import MenusView from '@/views/admin/MenusView.vue'
 import ProductsView from '@/views/admin/ProductsView.vue'
 import ProductFormView from '@/views/admin/ProductFormView.vue'
 
+import CatalogView from '@/views/store/CatalogView.vue'
+
 const routes = [
   // Storefront Layout Routes
   {
@@ -27,6 +29,31 @@ const routes = [
         path: '',
         name: 'home',
         component: HomeView,
+      },
+      {
+        path: 'shop',
+        name: 'shop',
+        component: CatalogView,
+      },
+      {
+        path: 'category/:slug',
+        name: 'category',
+        component: CatalogView,
+      },
+      {
+        path: 'search',
+        name: 'search',
+        component: CatalogView,
+      },
+      {
+        path: 'sale',
+        name: 'sale',
+        component: CatalogView,
+      },
+      {
+        path: 'new',
+        name: 'new',
+        component: CatalogView,
       },
       // 404 Catch-All inside Storefront Shell
       {

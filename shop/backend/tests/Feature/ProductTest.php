@@ -14,8 +14,9 @@ class ProductTest extends TestCase
 {
     public function test_public_products_list_returns_card_payload_under_200ms(): void
     {
-        // Warm up framework request cycle
+        // Warm up framework request cycle and database connection
         $this->getJson('/api/health');
+        $this->getJson('/api/products?per_page=1');
 
         $startTime = microtime(true);
 
@@ -298,5 +299,48 @@ class ProductTest extends TestCase
         $searchResults = $searchResponse->json('data');
         $this->assertNotEmpty($searchResults);
         $this->assertEquals($productId, $searchResults[0]['id']);
+    }
+
+    public function test_catalog_filters_endpoint_returns_facets(): void
+    {
+        $response = $this->getJson('/api/catalog/filters');
+
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'data' => [
+                    'brands' => [
+                        '*' => ['id', 'name', 'slug', 'products_count'],
+                    ],
+                    'categories' => [
+                        '*' => ['id', 'name', 'slug', 'products_count'],
+                    ],
+                    'colors',
+                    'sizes',
+                    'price_range' => ['min', 'max'],
+                ],
+            ]);
+
+        $this->assertNotEmpty($response->json('data.brands'));
+        $this->assertNotEmpty($response->json('data.categories'));
+    }
+
+    public function test_catalog_filtering_by_rating_and_sorting_by_rating(): void
+    {
+        // 1. Filter by rating 4+
+        $response = $this->getJson('/api/products?rating=4');
+        $response->assertStatus(200);
+
+        $data = $response->json('data');
+        $this->assertNotEmpty($data);
+        foreach ($data as $prod) {
+            $this->assertGreaterThanOrEqual(4.0, (float) $prod['rating']);
+        }
+
+        // 2. Sort by rating
+        $sortResponse = $this->getJson('/api/products?sort=rating');
+        $sortResponse->assertStatus(200);
+        $sortData = $sortResponse->json('data');
+        $this->assertNotEmpty($sortData);
+        $this->assertGreaterThanOrEqual($sortData[count($sortData) - 1]['rating'], $sortData[0]['rating']);
     }
 }

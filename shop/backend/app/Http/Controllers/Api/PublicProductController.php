@@ -50,4 +50,16 @@ class PublicProductController extends Controller
             'data' => $suggestions,
         ]);
     }
+
+    /**
+     * Available catalog facets/filters for sidebar.
+     */
+    public function filters(): JsonResponse
+    {
+        $filters = ProductService::getCatalogFilters();
+
+        return response()->json([
+            'data' => $filters,
+        ]);
+    }
 }

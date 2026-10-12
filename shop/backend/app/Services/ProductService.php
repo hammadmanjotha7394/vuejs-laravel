@@ -2,13 +2,16 @@
 
 namespace App\Services;
 
+use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductDetailsSection;
 use App\Models\ProductImage;
+use App\Models\ProductOptionValue;
 use App\Models\ProductSpec;
 use App\Models\Tag;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -100,7 +103,13 @@ class ProductService
             });
         }
 
-        // 8. Sorting
+        // 8. Rating Filter
+        if (! empty($filters['rating']) && is_numeric($filters['rating'])) {
+            $minRating = (float) $filters['rating'];
+            $query->whereRaw('(SELECT AVG(rating) FROM reviews WHERE reviews.product_id = products.id AND reviews.is_approved = 1) >= ?', [$minRating]);
+        }
+
+        // 9. Sorting
         $sort = $filters['sort'] ?? 'newest';
         switch ($sort) {
             case 'price_asc':
@@ -111,6 +120,9 @@ class ProductService
                 break;
             case 'popular':
                 $query->orderBy('is_featured', 'desc')->latest('id');
+                break;
+            case 'rating':
+                $query->orderByDesc('approved_reviews_avg_rating')->latest('id');
                 break;
             case 'newest':
             default:
@@ -124,6 +136,60 @@ class ProductService
         $paginator->getCollection()->transform(fn (Product $product) => self::formatProductCard($product));
 
         return $paginator;
+    }
+
+    /**
+     * Get available catalog filter options (brands, categories, colors, sizes, price range).
+     *
+     * @return array<string, mixed>
+     */
+    public static function getCatalogFilters(): array
+    {
+        return Cache::remember('storefront_catalog_filters', 3600, function () {
+            $brands = Brand::select('id', 'name', 'slug')
+                ->whereHas('products', fn ($q) => $q->whereIn('status', ['active', 'published']))
+                ->withCount(['products' => fn ($q) => $q->whereIn('status', ['active', 'published'])])
+                ->orderBy('name')
+                ->get();
+
+            $categories = Category::select('id', 'name', 'slug', 'parent_id', 'image')
+                ->where('is_active', true)
+                ->whereNull('parent_id')
+                ->with(['children' => fn ($q) => $q->where('is_active', true)->select('id', 'name', 'slug', 'parent_id')])
+                ->withCount(['products' => fn ($q) => $q->whereIn('status', ['active', 'published'])])
+                ->orderBy('sort_order')
+                ->get();
+
+            $colors = ProductOptionValue::whereHas('optionType', fn ($q) => $q->where('name', 'like', '%color%'))
+                ->whereNotNull('color_hex')
+                ->select('value', 'color_hex')
+                ->distinct()
+                ->get()
+                ->map(fn ($c) => ['name' => $c->value, 'hex' => $c->color_hex])
+                ->unique('name')
+                ->values();
+
+            $sizes = ProductOptionValue::whereHas('optionType', fn ($q) => $q->where('name', 'like', '%size%'))
+                ->select('value')
+                ->distinct()
+                ->pluck('value')
+                ->values();
+
+            $priceStats = Product::whereIn('status', ['active', 'published'])
+                ->selectRaw('MIN(base_price) as min_price, MAX(base_price) as max_price')
+                ->first();
+
+            return [
+                'brands' => $brands,
+                'categories' => $categories,
+                'colors' => $colors,
+                'sizes' => $sizes,
+                'price_range' => [
+                    'min' => (float) floor($priceStats->min_price ?? 0),
+                    'max' => (float) ceil($priceStats->max_price ?? 300),
+                ],
+            ];
+        });
     }
 
     /**
@@ -142,9 +208,13 @@ class ProductService
             ? (int) round((($product->compare_at_price - $product->base_price) / $product->compare_at_price) * 100)
             : 0;
 
-        $rating = $product->approved_reviews_avg_rating ?? ($product->relationLoaded('approvedReviews') ? $product->approvedReviews->avg('rating') : $product->approvedReviews()->avg('rating')) ?: 5.0;
-        $reviewsCount = $product->approved_reviews_count ?? ($product->relationLoaded('approvedReviews') ? $product->approvedReviews->count() : $product->approvedReviews()->count());
-        $hasVariants = isset($product->variants_count) ? ($product->variants_count > 0) : ($product->relationLoaded('variants') ? $product->variants->isNotEmpty() : $product->variants()->exists());
+        $rating = $product->approved_reviews_avg_rating !== null
+            ? (float) $product->approved_reviews_avg_rating
+            : ($product->relationLoaded('approvedReviews') ? (float) ($product->approvedReviews->avg('rating') ?: 5.0) : 5.0);
+        $reviewsCount = $product->approved_reviews_count ?? ($product->relationLoaded('approvedReviews') ? $product->approvedReviews->count() : 0);
+        $hasVariants = isset($product->variants_count)
+            ? ($product->variants_count > 0)
+            : ($product->relationLoaded('variants') ? $product->variants->isNotEmpty() : false);
 
         return [
             'id' => $product->id,
