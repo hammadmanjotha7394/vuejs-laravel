@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
@@ -65,5 +66,14 @@ class User extends Authenticatable
     public function cart(): HasOne
     {
         return $this->hasOne(Cart::class);
+    }
+
+    public function getFlatPermissions(): array
+    {
+        if ($this->hasRole('super_admin')) {
+            return Permission::pluck('name')->toArray();
+        }
+
+        return $this->getAllPermissions()->pluck('name')->toArray();
     }
 }

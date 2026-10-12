@@ -1,8 +1,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { RouterLink } from 'vue-router'
 import { CheckCircle2, AlertCircle, RefreshCw, ShoppingBag, ArrowRight } from 'lucide-vue-next'
 import apiClient from '@/api/client'
+import { useAuthStore } from '@/stores/auth'
 
+const authStore = useAuthStore()
 const healthStatus = ref(null)
 const isLoading = ref(true)
 const errorMessage = ref('')
@@ -40,8 +43,37 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="flex items-center gap-4 text-sm font-medium">
-          <span class="text-ink-muted">Step 1 Foundation</span>
+        <div class="flex items-center gap-3 text-xs font-medium">
+          <template v-if="authStore.isAuthenticated">
+            <span class="text-ink font-semibold hidden sm:inline">{{ authStore.user?.name }}</span>
+            <RouterLink
+              v-if="authStore.isStaff"
+              to="/admin"
+              class="px-3.5 py-1.5 rounded-pill bg-brand text-white hover:opacity-90 transition font-medium"
+            >
+              Admin Dashboard
+            </RouterLink>
+            <button
+              @click="authStore.logout()"
+              class="px-3 py-1.5 rounded-pill border border-line hover:bg-surface text-ink-muted hover:text-ink transition"
+            >
+              Sign out
+            </button>
+          </template>
+          <template v-else>
+            <RouterLink
+              to="/login"
+              class="px-3.5 py-1.5 rounded-pill border border-line hover:bg-surface text-ink transition"
+            >
+              Sign in
+            </RouterLink>
+            <RouterLink
+              to="/register"
+              class="px-3.5 py-1.5 rounded-pill bg-brand text-white hover:opacity-90 transition"
+            >
+              Register
+            </RouterLink>
+          </template>
         </div>
       </div>
     </header>
