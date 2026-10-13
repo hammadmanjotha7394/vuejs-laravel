@@ -62,3 +62,17 @@ const props = defineProps({
     </div>
   </section>
 </template>
+
+<style scoped>
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+</style>
+

@@ -219,7 +219,7 @@ onMounted(() => {
     </nav>
 
     <!-- Quick Navigation Bar for Care & Policy Pages -->
-    <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-3 mb-8 border-b border-line">
+    <div class="flex items-center gap-2 overflow-x-auto sm:flex-wrap no-scrollbar [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-3 mb-8 border-b border-line">
       <RouterLink
         v-for="item in quickHelpLinks"
         :key="item.slug"
@@ -391,3 +391,17 @@ onMounted(() => {
     </article>
   </div>
 </template>
+
+<style scoped>
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+</style>
+
