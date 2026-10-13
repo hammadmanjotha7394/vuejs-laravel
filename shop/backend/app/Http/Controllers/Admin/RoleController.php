@@ -22,15 +22,22 @@ class RoleController extends Controller
 
     public function index(): JsonResponse
     {
-        $roles = Role::with('permissions')->withCount('users')->get();
+        $roles = Role::with('permissions')->get();
+
+        $userCounts = \Illuminate\Support\Facades\DB::table(
+            config('permission.table_names.model_has_roles', 'model_has_roles')
+        )
+            ->select('role_id', \Illuminate\Support\Facades\DB::raw('count(*) as aggregate'))
+            ->groupBy('role_id')
+            ->pluck('aggregate', 'role_id');
 
         return response()->json([
-            'data' => $roles->map(function (Role $role) {
+            'data' => $roles->map(function (Role $role) use ($userCounts) {
                 return [
                     'id' => $role->id,
                     'name' => $role->name,
                     'is_core' => in_array($role->name, $this->coreRoles),
-                    'users_count' => $role->users_count,
+                    'users_count' => (int) ($userCounts[$role->id] ?? 0),
                     'permissions' => $role->permissions->pluck('name')->toArray(),
                 ];
             }),
@@ -116,7 +123,11 @@ class RoleController extends Controller
             return response()->json(['message' => 'System core roles cannot be deleted.'], 422);
         }
 
-        if ($role->users()->count() > 0) {
+        $assignedCount = \Illuminate\Support\Facades\DB::table(
+            config('permission.table_names.model_has_roles', 'model_has_roles')
+        )->where('role_id', $role->id)->count();
+
+        if ($assignedCount > 0) {
             return response()->json(['message' => 'Cannot delete role because it is currently assigned to users.'], 422);
         }
 
