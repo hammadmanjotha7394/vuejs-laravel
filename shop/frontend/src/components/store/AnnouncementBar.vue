@@ -49,19 +49,19 @@ const dismiss = () => {
 <template>
   <aside
     v-if="isVisible"
-    class="relative z-40 text-xs py-2 px-4 flex items-center justify-center transition-all duration-300 font-medium"
+    class="relative z-40 text-[11px] sm:text-xs py-2 px-3 sm:px-4 flex items-center justify-center transition-all duration-300 font-medium"
     :style="{
       backgroundColor: announcement?.background_color || announcement?.bg_color || 'var(--brand, #2F5D50)',
       color: announcement?.text_color || '#FFFFFF',
     }"
     aria-label="Announcement"
   >
-    <div class="max-w-container mx-auto flex items-center justify-center text-center gap-2 pr-6">
+    <div class="max-w-container mx-auto flex flex-wrap items-center justify-center text-center gap-x-2 gap-y-0.5 px-7 sm:px-10 leading-tight">
       <span class="tracking-tight">{{ displayText }}</span>
       <RouterLink
         v-if="announcement?.link || !announcement?.text"
         :to="announcement?.link || '/shop'"
-        class="inline-flex items-center gap-1 underline underline-offset-4 hover:opacity-85 font-semibold transition text-white"
+        class="inline-flex items-center gap-1 underline underline-offset-4 hover:opacity-85 font-semibold transition text-white shrink-0"
       >
         <span>Shop Now</span>
         <ArrowRight class="w-3 h-3" />
@@ -72,7 +72,7 @@ const dismiss = () => {
       v-if="announcement.dismissible !== false"
       type="button"
       @click="dismiss"
-      class="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-black/10 transition opacity-80 hover:opacity-100"
+      class="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-black/10 transition opacity-80 hover:opacity-100"
       aria-label="Dismiss announcement"
     >
       <X class="w-3.5 h-3.5" />

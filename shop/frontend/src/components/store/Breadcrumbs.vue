@@ -47,7 +47,7 @@ useHead({
 
 <template>
   <nav aria-label="Breadcrumb" class="py-2.5">
-    <ol class="flex items-center flex-wrap gap-1.5 text-xs text-ink-muted">
+    <ol class="flex items-center flex-wrap gap-1 sm:gap-1.5 text-[11px] sm:text-xs text-ink-muted">
       <li>
         <RouterLink
           to="/"
@@ -62,19 +62,19 @@ useHead({
       <li
         v-for="(item, index) in items"
         :key="'crumb-' + index"
-        class="flex items-center gap-1.5"
+        class="flex items-center gap-1 sm:gap-1.5"
       >
-        <ChevronRight class="w-3.5 h-3.5 text-ink-muted/50 flex-shrink-0" />
+        <ChevronRight class="w-3 h-3 sm:w-3.5 sm:h-3.5 text-ink-muted/50 flex-shrink-0" />
         <RouterLink
           v-if="item.url && index < items.length - 1"
           :to="item.url"
-          class="hover:text-brand transition max-w-[180px] truncate"
+          class="hover:text-brand transition max-w-[120px] sm:max-w-[180px] truncate"
         >
           {{ item.label }}
         </RouterLink>
         <span
           v-else
-          class="text-ink font-semibold max-w-[200px] truncate"
+          class="text-ink font-semibold max-w-[130px] sm:max-w-[220px] truncate"
           aria-current="page"
         >
           {{ item.label }}

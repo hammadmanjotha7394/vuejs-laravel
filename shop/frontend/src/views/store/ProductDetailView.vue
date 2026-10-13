@@ -747,20 +747,20 @@ useHead({
 
           <!-- Quantity Stepper & Main Add To Cart Action -->
           <div ref="addToCartBtnRef" class="space-y-3 pt-2">
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 sm:gap-3">
               <!-- Stepper -->
-              <div class="inline-flex items-center border border-line rounded-pill bg-white px-2 py-1 shadow-xs">
+              <div class="inline-flex items-center border border-line rounded-pill bg-white px-1.5 sm:px-2 py-1 shadow-xs shrink-0">
                 <button
                   type="button"
                   @click="decrementQuantity"
                   :disabled="quantity <= 1 || !inStock"
-                  class="w-7 h-7 rounded-full flex items-center justify-center text-ink-muted hover:text-ink disabled:opacity-30 disabled:cursor-not-allowed transition"
+                  class="w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-ink-muted hover:text-ink disabled:opacity-30 disabled:cursor-not-allowed transition"
                   aria-label="Decrease quantity"
                 >
-                  <Minus class="w-3.5 h-3.5" />
+                  <Minus class="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 </button>
 
-                <span class="w-10 text-center font-bold text-xs text-ink select-none font-mono">
+                <span class="w-7 sm:w-10 text-center font-bold text-xs text-ink select-none font-mono">
                   {{ quantity }}
                 </span>
 
@@ -768,10 +768,10 @@ useHead({
                   type="button"
                   @click="incrementQuantity"
                   :disabled="!inStock || (product.track_stock && quantity >= stockQty)"
-                  class="w-7 h-7 rounded-full flex items-center justify-center text-ink-muted hover:text-ink disabled:opacity-30 disabled:cursor-not-allowed transition"
+                  class="w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-ink-muted hover:text-ink disabled:opacity-30 disabled:cursor-not-allowed transition"
                   aria-label="Increase quantity"
                 >
-                  <Plus class="w-3.5 h-3.5" />
+                  <Plus class="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 </button>
               </div>
 
@@ -780,18 +780,18 @@ useHead({
                 type="button"
                 @click="handleAddToCart"
                 :disabled="!inStock || isAddingToCart || isInstantCheckingOut"
-                class="flex-1 py-3 px-5 rounded-pill border border-line bg-white hover:bg-surface text-ink text-xs sm:text-sm font-semibold transition flex items-center justify-center gap-2 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                class="flex-1 min-w-0 py-2.5 sm:py-3 px-3 sm:px-5 rounded-pill border border-line bg-white hover:bg-surface text-ink text-xs sm:text-sm font-semibold transition flex items-center justify-center gap-1.5 sm:gap-2 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
               >
-                <Loader2 v-if="isAddingToCart" class="w-4 h-4 animate-spin" />
-                <ShoppingBag v-else class="w-4 h-4" />
-                <span>{{ inStock ? 'Add to Bag' : 'Sold Out' }}</span>
+                <Loader2 v-if="isAddingToCart" class="w-4 h-4 animate-spin shrink-0" />
+                <ShoppingBag v-else class="w-4 h-4 shrink-0" />
+                <span class="whitespace-nowrap">{{ inStock ? 'Add to Bag' : 'Sold Out' }}</span>
               </button>
 
               <!-- Wishlist Heart Button -->
               <button
                 type="button"
                 @click="toggleWishlist"
-                class="w-11 h-11 rounded-full border border-line bg-white flex items-center justify-center text-ink hover:text-brand hover:border-brand/40 transition shadow-xs focus:outline-none"
+                class="w-9 h-9 sm:w-11 sm:h-11 shrink-0 rounded-full border border-line bg-white flex items-center justify-center text-ink hover:text-brand hover:border-brand/40 transition shadow-xs focus:outline-none"
                 :class="{ 'text-rose-600 border-rose-200 bg-rose-50/50': isWishlisted }"
                 :aria-label="isWishlisted ? 'Remove from wishlist' : 'Save to wishlist'"
               >
@@ -805,7 +805,7 @@ useHead({
               <button
                 type="button"
                 @click="shareProduct"
-                class="w-11 h-11 rounded-full border border-line bg-white flex items-center justify-center text-ink-muted hover:text-ink hover:border-ink-muted transition shadow-xs focus:outline-none"
+                class="w-9 h-9 sm:w-11 sm:h-11 shrink-0 rounded-full border border-line bg-white flex items-center justify-center text-ink-muted hover:text-ink hover:border-ink-muted transition shadow-xs focus:outline-none"
                 aria-label="Share product"
                 title="Share product link"
               >
@@ -819,10 +819,10 @@ useHead({
               type="button"
               @click="handleInstantCheckout"
               :disabled="isInstantCheckingOut || isAddingToCart"
-              class="w-full py-3.5 px-6 rounded-pill bg-brand hover:opacity-90 text-white text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed group"
+              class="w-full py-3.5 px-4 sm:px-6 rounded-pill bg-brand hover:opacity-90 text-white text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed group text-center"
             >
-              <Loader2 v-if="isInstantCheckingOut" class="w-4 h-4 animate-spin" />
-              <Zap v-else class="w-4 h-4 text-amber-300 fill-amber-300 transition-transform group-hover:scale-110" />
+              <Loader2 v-if="isInstantCheckingOut" class="w-4 h-4 animate-spin shrink-0" />
+              <Zap v-else class="w-4 h-4 text-amber-300 fill-amber-300 shrink-0 transition-transform group-hover:scale-110" />
               <span>Instant Checkout • Buy Now ({{ settingsStore.formatPrice(currentPrice * quantity) }})</span>
             </button>
 

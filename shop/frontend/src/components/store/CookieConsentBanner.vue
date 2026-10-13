@@ -20,28 +20,28 @@ function setConsent(value) {
 <template>
   <div
     v-if="visible"
-    class="fixed bottom-4 left-4 z-40 max-w-sm bg-white border border-[#EAE8E3] rounded-2xl p-4 shadow-lg"
+    class="fixed bottom-3 inset-x-3 sm:inset-x-auto sm:bottom-4 sm:left-4 z-50 sm:max-w-sm bg-white border border-line rounded-2xl p-3.5 sm:p-4 shadow-xl"
   >
     <div class="flex items-start gap-3">
-      <div class="w-8 h-8 rounded-full bg-[#F8F7F4] border border-[#EAE8E3] flex items-center justify-center shrink-0 mt-0.5">
-        <Cookie class="w-4 h-4 text-[#111111]" />
+      <div class="w-8 h-8 rounded-full bg-brand/10 border border-brand/15 flex items-center justify-center shrink-0 mt-0.5 text-brand">
+        <Cookie class="w-4 h-4" />
       </div>
-      <div class="space-y-2.5">
-        <p class="text-xs text-[#6B7280] leading-relaxed">
+      <div class="space-y-2.5 flex-1 min-w-0">
+        <p class="text-xs text-ink-muted leading-relaxed">
           We use essential cookies to keep your shopping bag working and optional analytics cookies to improve our store.
-          <router-link to="/page/privacy" class="underline text-[#111111]">Privacy Policy</router-link>.
+          <router-link to="/page/privacy" class="underline text-brand font-medium hover:opacity-85">Privacy Policy</router-link>.
         </p>
         <div class="flex items-center gap-2">
           <button
             type="button"
-            class="px-3.5 py-1.5 rounded-full bg-[#111111] text-white text-xs font-medium hover:opacity-90"
+            class="px-3.5 py-1.5 rounded-full bg-brand text-white text-xs font-semibold hover:opacity-90 transition shadow-xs"
             @click="setConsent('accepted')"
           >
             Accept All
           </button>
           <button
             type="button"
-            class="px-3.5 py-1.5 rounded-full border border-[#EAE8E3] text-xs font-medium text-[#6B7280] hover:text-[#111111]"
+            class="px-3.5 py-1.5 rounded-full border border-line text-xs font-medium text-ink-muted hover:text-ink hover:bg-surface transition"
             @click="setConsent('declined')"
           >
             Essential Only

@@ -115,7 +115,7 @@ const footerMenuItems = computed(() => {
               :href="socialLinks.instagram"
               target="_blank"
               rel="noopener noreferrer"
-              class="w-8 h-8 rounded-full bg-white border border-line flex items-center justify-center text-ink-muted hover:text-brand hover:border-brand transition shadow-xs"
+              class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white border border-line flex items-center justify-center text-ink-muted hover:text-brand hover:border-brand transition shadow-xs"
               aria-label="Instagram"
             >
               <Instagram class="w-4 h-4" />
@@ -126,7 +126,7 @@ const footerMenuItems = computed(() => {
               :href="socialLinks.facebook"
               target="_blank"
               rel="noopener noreferrer"
-              class="w-8 h-8 rounded-full bg-white border border-line flex items-center justify-center text-ink-muted hover:text-brand hover:border-brand transition shadow-xs"
+              class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white border border-line flex items-center justify-center text-ink-muted hover:text-brand hover:border-brand transition shadow-xs"
               aria-label="Facebook"
             >
               <Facebook class="w-4 h-4" />
@@ -137,7 +137,7 @@ const footerMenuItems = computed(() => {
               :href="socialLinks.youtube"
               target="_blank"
               rel="noopener noreferrer"
-              class="w-8 h-8 rounded-full bg-white border border-line flex items-center justify-center text-ink-muted hover:text-brand hover:border-brand transition shadow-xs"
+              class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white border border-line flex items-center justify-center text-ink-muted hover:text-brand hover:border-brand transition shadow-xs"
               aria-label="YouTube"
             >
               <Youtube class="w-4 h-4" />
@@ -148,7 +148,7 @@ const footerMenuItems = computed(() => {
               :href="socialLinks.x || socialLinks.twitter"
               target="_blank"
               rel="noopener noreferrer"
-              class="w-8 h-8 rounded-full bg-white border border-line flex items-center justify-center text-ink-muted hover:text-brand hover:border-brand transition shadow-xs"
+              class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white border border-line flex items-center justify-center text-ink-muted hover:text-brand hover:border-brand transition shadow-xs"
               aria-label="X / Twitter"
             >
               <Twitter class="w-4 h-4" />
@@ -159,10 +159,10 @@ const footerMenuItems = computed(() => {
               :href="socialLinks.tiktok.startsWith('http') ? socialLinks.tiktok : `https://tiktok.com/@${socialLinks.tiktok.replace('@', '')}`"
               target="_blank"
               rel="noopener noreferrer"
-              class="w-8 h-8 rounded-full bg-white border border-line flex items-center justify-center text-ink-muted hover:text-brand hover:border-brand transition shadow-xs"
+              class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white border border-line flex items-center justify-center text-ink-muted hover:text-brand hover:border-brand transition shadow-xs"
               aria-label="TikTok"
             >
-              <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
                 <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.86.11V9.4a6.33 6.33 0 0 0-.86-.06 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.78c1.37.98 3.03 1.55 4.83 1.55V6.89c-.36 0-.72-.07-1.06-.2z"/>
               </svg>
             </a>
@@ -172,7 +172,7 @@ const footerMenuItems = computed(() => {
               :href="whatsappUrl"
               target="_blank"
               rel="noopener noreferrer"
-              class="w-8 h-8 rounded-full bg-white border border-line flex items-center justify-center text-ink-muted hover:text-brand hover:border-brand transition shadow-xs"
+              class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white border border-line flex items-center justify-center text-ink-muted hover:text-brand hover:border-brand transition shadow-xs"
               aria-label="WhatsApp"
             >
               <MessageCircle class="w-4 h-4" />
