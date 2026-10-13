@@ -159,6 +159,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/menus/{menu}/reorder', [MenuController::class, 'reorderItems'])->middleware('permission:menus.manage');
 
         // Products Catalog & Advanced Features
+        Route::get('/brands', [ProductController::class, 'brands'])->middleware('permission:products.view');
         Route::get('/products', [ProductController::class, 'index'])->middleware('permission:products.view');
         Route::post('/products', [ProductController::class, 'store'])->middleware('permission:products.create');
         Route::get('/products/export-csv', [ProductController::class, 'exportCsv'])->middleware('permission:products.view');
@@ -168,6 +169,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/products/upload-video', [ProductController::class, 'uploadVideo'])->middleware('permission:products.update');
         Route::get('/products/{product}', [ProductController::class, 'show'])->middleware('permission:products.view');
         Route::put('/products/{product}', [ProductController::class, 'update'])->middleware('permission:products.update');
+        Route::patch('/products/{product}/quick-toggle', [ProductController::class, 'quickToggle'])->middleware('permission:products.update');
         Route::delete('/products/{product}', [ProductController::class, 'destroy'])->middleware('permission:products.delete');
         Route::post('/products/{product}/duplicate', [ProductController::class, 'duplicate'])->middleware('permission:products.create');
         Route::post('/products/{product}/variants/bulk-edit', [ProductController::class, 'bulkEditVariants'])->middleware('permission:products.update');

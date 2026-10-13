@@ -123,6 +123,8 @@ class ProductTest extends TestCase
         foreach ($clone->variants as $variant) {
             $this->assertEquals(89.50, (float) $variant->price);
         }
+
+        $clone->forceDelete();
     }
 
     public function test_order_manager_cannot_create_or_delete_products_returns_403(): void
@@ -300,6 +302,62 @@ class ProductTest extends TestCase
         $searchResults = $searchResponse->json('data');
         $this->assertNotEmpty($searchResults);
         $this->assertEquals($productId, $searchResults[0]['id']);
+
+        $createdProduct->forceDelete();
+    }
+
+    public function test_admin_quick_toggle_and_brands_endpoint_and_variant_orders_count(): void
+    {
+        $pm = User::where('email', 'product@shop.test')->first();
+        $product = Product::whereIn('status', ['active', 'published'])->first();
+        $this->assertNotNull($product);
+
+        // 1. Brands list
+        $brandsResponse = $this->actingAs($pm)->getJson('/api/admin/brands');
+        $brandsResponse->assertStatus(200)
+            ->assertJsonStructure(['data' => ['*' => ['id', 'name', 'slug']]]);
+
+        // 2. Quick toggle status & is_featured
+        $originalStatus = $product->status;
+        $originalFeatured = (bool) $product->is_featured;
+
+        $toggleResponse = $this->actingAs($pm)
+            ->patchJson("/api/admin/products/{$product->id}/quick-toggle", [
+                'status' => 'draft',
+                'is_featured' => ! $originalFeatured,
+            ]);
+
+        $toggleResponse->assertStatus(200)
+            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.is_featured', ! $originalFeatured);
+
+        // Restore original status & featured flag
+        $this->actingAs($pm)
+            ->patchJson("/api/admin/products/{$product->id}/quick-toggle", [
+                'status' => $originalStatus === 'published' ? 'active' : $originalStatus,
+                'is_featured' => $originalFeatured,
+            ])
+            ->assertStatus(200);
+
+        // 3. Admin show endpoint includes variants with orders_count and option_types
+        $showResponse = $this->actingAs($pm)->getJson("/api/admin/products/{$product->id}");
+        $showResponse->assertStatus(200)
+            ->assertJsonStructure([
+                'data' => [
+                    'id',
+                    'name',
+                    'option_types',
+                    'variants',
+                    'images',
+                    'details_sections',
+                    'specs',
+                ],
+            ]);
+
+        // 4. Product manager still receives 403 on finance endpoints
+        $this->actingAs($pm)
+            ->getJson('/api/admin/finance/summary')
+            ->assertStatus(403);
     }
 
     public function test_catalog_filters_endpoint_returns_facets(): void

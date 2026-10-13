@@ -540,82 +540,159 @@ class ProductService
             }
 
             // 3. Option Types & Values
+            $optionValueMap = [];
             if (isset($data['options']) && is_array($data['options'])) {
-                $existingTypes = $product->optionTypes()->pluck('id')->toArray();
                 $processedTypeIds = [];
 
                 foreach ($data['options'] as $typeIndex => $optTypeData) {
+                    if (empty($optTypeData['name'])) {
+                        continue;
+                    }
                     $optType = $product->optionTypes()->updateOrCreate(
                         ['name' => $optTypeData['name']],
                         ['sort_order' => $typeIndex + 1]
                     );
                     $processedTypeIds[] = $optType->id;
 
+                    $processedValueIds = [];
                     if (isset($optTypeData['values']) && is_array($optTypeData['values'])) {
-                        foreach ($optTypeData['values'] as $valData) {
-                            $valName = is_array($valData) ? $valData['name'] : $valData;
-                            $hex = is_array($valData) ? ($valData['hex_color'] ?? null) : null;
-                            $optType->values()->updateOrCreate(
+                        foreach ($optTypeData['values'] as $valIndex => $valData) {
+                            $valName = is_array($valData) ? ($valData['name'] ?? ($valData['value'] ?? '')) : (string) $valData;
+                            if ($valName === '') {
+                                continue;
+                            }
+                            $hex = is_array($valData) ? ($valData['hex_color'] ?? ($valData['color_hex'] ?? null)) : null;
+                            $optVal = $optType->values()->updateOrCreate(
                                 ['value' => $valName],
-                                ['color_hex' => $hex]
+                                [
+                                    'color_hex' => $hex,
+                                    'sort_order' => $valIndex + 1,
+                                ]
                             );
+                            $processedValueIds[] = $optVal->id;
+                            $optionValueMap[strtolower($optType->name).':'.strtolower($valName)] = $optVal->id;
                         }
                     }
+
+                    $optType->values()->whereNotIn('id', $processedValueIds)->delete();
                 }
+
+                $product->optionTypes()->whereNotIn('id', $processedTypeIds)->delete();
             }
 
-            // 4. Variants
+            // 4. Images (Saved first so variants can reference image IDs or index)
+            $savedImageByIndex = [];
+            if (isset($data['images']) && is_array($data['images'])) {
+                $keptImageIds = [];
+                foreach ($data['images'] as $imgIndex => $imgData) {
+                    $imgRecord = null;
+                    if (! empty($imgData['id'])) {
+                        $imgRecord = ProductImage::where('product_id', $product->id)->where('id', $imgData['id'])->first();
+                    }
+
+                    $externalUrl = $imgData['external_url'] ?? ($imgData['url'] ?? null);
+                    if (! empty($imgData['path']) && $externalUrl && str_contains($externalUrl, $imgData['path'])) {
+                        $externalUrl = null;
+                    }
+
+                    if ($imgRecord) {
+                        $imgRecord->update([
+                            'path' => $imgData['path'] ?? $imgRecord->path,
+                            'external_url' => $externalUrl ?? $imgRecord->external_url,
+                            'thumb_path' => $imgData['thumb_path'] ?? $imgRecord->thumb_path,
+                            'medium_path' => $imgData['medium_path'] ?? $imgRecord->medium_path,
+                            'large_path' => $imgData['large_path'] ?? $imgRecord->large_path,
+                            'alt' => $imgData['alt'] ?? $product->name,
+                            'sort_order' => $imgIndex + 1,
+                            'is_primary' => ! empty($imgData['is_primary']) || ($imgIndex === 0 && ! collect($data['images'])->contains('is_primary', true)),
+                            'variant_id' => $imgData['variant_id'] ?? null,
+                        ]);
+                    } else {
+                        $imgRecord = ProductImage::updateOrCreate(
+                            [
+                                'product_id' => $product->id,
+                                'path' => $imgData['path'] ?? null,
+                                'external_url' => $externalUrl,
+                            ],
+                            [
+                                'thumb_path' => $imgData['thumb_path'] ?? null,
+                                'medium_path' => $imgData['medium_path'] ?? null,
+                                'large_path' => $imgData['large_path'] ?? null,
+                                'alt' => $imgData['alt'] ?? $product->name,
+                                'sort_order' => $imgIndex + 1,
+                                'is_primary' => ! empty($imgData['is_primary']) || ($imgIndex === 0),
+                                'variant_id' => $imgData['variant_id'] ?? null,
+                            ]
+                        );
+                    }
+
+                    $keptImageIds[] = $imgRecord->id;
+                    $savedImageByIndex[$imgIndex] = $imgRecord;
+                }
+
+                ProductImage::where('product_id', $product->id)
+                    ->whereNotIn('id', $keptImageIds)
+                    ->delete();
+            }
+
+            // 5. Variants
             if (isset($data['variants']) && is_array($data['variants'])) {
+                $keptVariantIds = [];
+
                 foreach ($data['variants'] as $varData) {
                     $varSku = $varData['sku'] ?? ($product->sku.'-'.Str::random(4));
+
+                    // Resolve linked image_id if image_index or image_id was passed
+                    $resolvedImageId = $varData['image_id'] ?? null;
+                    if (! $resolvedImageId && isset($varData['image_index']) && isset($savedImageByIndex[(int) $varData['image_index']])) {
+                        $resolvedImageId = $savedImageByIndex[(int) $varData['image_index']]->id;
+                    }
+
                     $variant = $product->variants()->updateOrCreate(
                         ['sku' => $varSku],
                         [
                             'price' => $varData['price'] ?? $product->base_price,
                             'compare_at_price' => $varData['compare_at_price'] ?? null,
                             'stock_qty' => $varData['stock_qty'] ?? 0,
+                            'image_id' => $resolvedImageId,
                             'is_active' => array_key_exists('is_active', $varData) ? (bool) $varData['is_active'] : true,
                             'option_values_json' => $varData['option_values_json'] ?? null,
                         ]
                     );
 
-                    // Sync option values to pivot if IDs provided
+                    $keptVariantIds[] = $variant->id;
+
+                    // Sync option values to pivot
                     if (! empty($varData['option_value_ids'])) {
                         $variant->optionValues()->sync($varData['option_value_ids']);
+                    } elseif (! empty($varData['option_values_json']) && is_array($varData['option_values_json']) && ! empty($optionValueMap)) {
+                        $autoIds = [];
+                        foreach ($varData['option_values_json'] as $optName => $optVal) {
+                            $lookupKey = strtolower((string) $optName).':'.strtolower((string) $optVal);
+                            if (isset($optionValueMap[$lookupKey])) {
+                                $autoIds[] = $optionValueMap[$lookupKey];
+                            }
+                        }
+                        if (! empty($autoIds)) {
+                            $variant->optionValues()->sync($autoIds);
+                        }
                     }
                 }
-            }
 
-            // 5. Images
-            if (isset($data['images']) && is_array($data['images'])) {
-                foreach ($data['images'] as $imgIndex => $imgData) {
-                    ProductImage::updateOrCreate(
-                        [
-                            'product_id' => $product->id,
-                            'path' => $imgData['path'] ?? null,
-                            'external_url' => $imgData['url'] ?? ($imgData['external_url'] ?? null),
-                        ],
-                        [
-                            'thumb_path' => $imgData['thumb_path'] ?? null,
-                            'medium_path' => $imgData['medium_path'] ?? null,
-                            'large_path' => $imgData['large_path'] ?? null,
-                            'alt' => $imgData['alt'] ?? $product->name,
-                            'sort_order' => $imgIndex + 1,
-                            'is_primary' => ! empty($imgData['is_primary']) || ($imgIndex === 0),
-                            'variant_id' => $imgData['variant_id'] ?? null,
-                        ]
-                    );
-                }
+                $product->variants()->whereNotIn('id', $keptVariantIds)->delete();
             }
 
             // 6. Details Sections (Accordion blocks)
             if (isset($data['sections']) && is_array($data['sections'])) {
                 $product->detailsSections()->delete();
                 foreach ($data['sections'] as $secIndex => $secData) {
+                    if (empty($secData['title'])) {
+                        continue;
+                    }
                     ProductDetailsSection::create([
                         'product_id' => $product->id,
                         'title' => $secData['title'],
-                        'content' => self::sanitizeHtml($secData['content']),
+                        'content' => self::sanitizeHtml($secData['content'] ?? ''),
                         'is_open_by_default' => ! empty($secData['is_open_by_default']),
                         'sort_order' => $secIndex + 1,
                     ]);
@@ -626,14 +703,20 @@ class ProductService
             if (isset($data['specs']) && is_array($data['specs'])) {
                 $product->specs()->delete();
                 foreach ($data['specs'] as $spIndex => $spData) {
+                    $lbl = trim((string) ($spData['label'] ?? ($spData['name'] ?? '')));
+                    if ($lbl === '') {
+                        continue;
+                    }
                     ProductSpec::create([
                         'product_id' => $product->id,
-                        'label' => $spData['label'] ?? ($spData['name'] ?? ''),
-                        'value' => $spData['value'] ?? '',
+                        'label' => $lbl,
+                        'value' => (string) ($spData['value'] ?? ''),
                         'sort_order' => $spIndex + 1,
                     ]);
                 }
             }
+
+            Cache::forget('storefront_catalog_filters');
 
             return $product;
         });

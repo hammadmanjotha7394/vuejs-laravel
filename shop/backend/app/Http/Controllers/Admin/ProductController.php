@@ -3,17 +3,32 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Brand;
 use App\Models\Product;
 use App\Services\ImageService;
 use App\Services\ProductService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ProductController extends Controller
 {
     /**
-     * List products with admin search, filtering, and eager loading.
+     * List brands for product form and catalog filters.
+     */
+    public function brands(): JsonResponse
+    {
+        $brands = Brand::orderBy('name')->get(['id', 'name', 'slug', 'logo']);
+
+        return response()->json([
+            'data' => $brands,
+        ]);
+    }
+
+    /**
+     * List products with admin search, filtering, sorting, and eager loading.
      */
     public function index(Request $request): JsonResponse
     {
@@ -22,7 +37,7 @@ class ProductController extends Controller
             ->withCount('variants');
 
         if ($request->filled('search')) {
-            $term = $request->input('search');
+            $term = trim((string) $request->input('search'));
             $query->where(function ($q) use ($term) {
                 $q->where('name', 'like', "%{$term}%")
                     ->orWhere('sku', 'like', "%{$term}%");
@@ -34,17 +49,64 @@ class ProductController extends Controller
         }
 
         if ($request->filled('category_id')) {
-            $query->where('category_id', $request->input('category_id'));
+            $catId = (int) $request->input('category_id');
+            $query->where(function ($q) use ($catId) {
+                $q->where('category_id', $catId)
+                    ->orWhereHas('categories', fn ($c) => $c->where('categories.id', $catId));
+            });
         }
 
         if ($request->filled('brand_id')) {
             $query->where('brand_id', $request->input('brand_id'));
         }
 
+        if ($request->input('stock_filter') === 'low') {
+            $query->where('track_stock', true)
+                ->whereColumn('stock_qty', '<=', 'low_stock_threshold');
+        } elseif ($request->input('stock_filter') === 'out') {
+            $query->where('track_stock', true)
+                ->where('stock_qty', '<=', 0);
+        }
+
+        if ($request->filled('is_featured')) {
+            $query->where('is_featured', filter_var($request->input('is_featured'), FILTER_VALIDATE_BOOLEAN));
+        }
+
+        $allowedSorts = ['id', 'name', 'base_price', 'stock_qty', 'status'];
+        $sortBy = in_array($request->input('sort_by'), $allowedSorts, true) ? $request->input('sort_by') : 'id';
+        $sortDir = strtolower((string) $request->input('sort_dir')) === 'asc' ? 'asc' : 'desc';
+
         $perPage = (int) $request->input('per_page', 25);
-        $products = $query->latest('id')->paginate($perPage);
+        $products = $query->orderBy($sortBy, $sortDir)->paginate($perPage);
 
         return response()->json($products);
+    }
+
+    /**
+     * Quick toggle active status or featured flag from the admin product list.
+     */
+    public function quickToggle(Request $request, Product $product): JsonResponse
+    {
+        $validated = $request->validate([
+            'status' => 'nullable|in:draft,active,published,archived',
+            'is_featured' => 'nullable|boolean',
+        ]);
+
+        if (array_key_exists('status', $validated) && $validated['status'] !== null) {
+            $product->status = $validated['status'];
+        }
+
+        if (array_key_exists('is_featured', $validated) && $validated['is_featured'] !== null) {
+            $product->is_featured = (bool) $validated['is_featured'];
+        }
+
+        $product->save();
+        Cache::forget('storefront_catalog_filters');
+
+        return response()->json([
+            'message' => 'Product updated.',
+            'data' => $product->fresh(['category', 'brand', 'primaryImage']),
+        ]);
     }
 
     /**
@@ -83,6 +145,8 @@ class ProductController extends Controller
             'seo_title' => 'nullable|string|max:150',
             'seo_description' => 'nullable|string|max:500',
             'seo_social_image' => 'nullable|string|max:500',
+            'related_products_json' => 'nullable|array',
+            'frequently_bought_together_json' => 'nullable|array',
             'options' => 'nullable|array',
             'variants' => 'nullable|array',
             'images' => 'nullable|array',
@@ -94,12 +158,12 @@ class ProductController extends Controller
 
         return response()->json([
             'message' => 'Product created successfully.',
-            'data' => $product->load(['category', 'brand', 'images', 'variants.optionValues', 'optionTypes.values', 'detailsSections', 'specs']),
+            'data' => $product->load(['category', 'categories', 'brand', 'images', 'variants.optionValues', 'optionTypes.values', 'detailsSections', 'specs']),
         ], 201);
     }
 
     /**
-     * Show full single product for editing.
+     * Show full single product for editing, including order counts per variant.
      */
     public function show(Product $product): JsonResponse
     {
@@ -110,7 +174,7 @@ class ProductController extends Controller
             'tags',
             'images',
             'optionTypes.values',
-            'variants.optionValues',
+            'variants' => fn ($q) => $q->with(['optionValues', 'image'])->withCount('orderItems as orders_count'),
             'detailsSections',
             'specs',
         ]);
@@ -156,6 +220,8 @@ class ProductController extends Controller
             'seo_title' => 'nullable|string|max:150',
             'seo_description' => 'nullable|string|max:500',
             'seo_social_image' => 'nullable|string|max:500',
+            'related_products_json' => 'nullable|array',
+            'frequently_bought_together_json' => 'nullable|array',
             'options' => 'nullable|array',
             'variants' => 'nullable|array',
             'images' => 'nullable|array',
@@ -167,7 +233,16 @@ class ProductController extends Controller
 
         return response()->json([
             'message' => 'Product updated successfully.',
-            'data' => $updatedProduct->load(['category', 'brand', 'images', 'variants.optionValues', 'optionTypes.values', 'detailsSections', 'specs']),
+            'data' => $updatedProduct->load([
+                'category',
+                'categories',
+                'brand',
+                'images',
+                'variants' => fn ($q) => $q->with(['optionValues', 'image'])->withCount('orderItems as orders_count'),
+                'optionTypes.values',
+                'detailsSections',
+                'specs',
+            ]),
         ]);
     }
 
