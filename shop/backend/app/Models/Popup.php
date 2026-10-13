@@ -25,6 +25,9 @@ class Popup extends Model
         'ends_at',
         'is_active',
         'sort_order',
+        'views_count',
+        'clicks_count',
+        'signups_count',
     ];
 
     protected function casts(): array
@@ -33,6 +36,9 @@ class Popup extends Model
             'is_active' => 'boolean',
             'trigger_value' => 'integer',
             'sort_order' => 'integer',
+            'views_count' => 'integer',
+            'clicks_count' => 'integer',
+            'signups_count' => 'integer',
             'show_on_pages_json' => 'array',
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',

@@ -1,29 +1,46 @@
 <script setup>
+import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { ArrowRight } from 'lucide-vue-next'
+import { useSettingsStore } from '@/stores/settings'
 
 const props = defineProps({
   banners: {
     type: Array,
-    default: () => [
-      {
-        tag: 'Artisan Textiles',
-        title: 'Organic Flax Linen',
-        description: 'Breathable shirting and washed duvet sets tailored for longevity.',
-        button_text: 'Shop Collection',
-        button_url: '/category/apparel',
-        image: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1000&q=80',
-      },
-      {
-        tag: 'Architectural Lighting',
-        title: 'Warm Table Lamps',
-        description: 'Cast solid brass with warm dimmed tones for tactile sanctuary spaces.',
-        button_text: 'Explore Homeware',
-        button_url: '/category/home-living',
-        image: 'https://images.unsplash.com/photo-1616046229478-9901c5536a45?auto=format&fit=crop&w=1000&q=80',
-      },
-    ],
+    default: () => [],
   },
+})
+
+const settingsStore = useSettingsStore()
+
+const defaultBanners = [
+  {
+    tag: 'Artisan Textiles',
+    title: 'Organic Flax Linen',
+    description: 'Breathable shirting and washed duvet sets tailored for longevity.',
+    button_text: 'Shop Collection',
+    button_url: '/category/apparel',
+    image: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1000&q=80',
+  },
+  {
+    tag: 'Architectural Lighting',
+    title: 'Warm Table Lamps',
+    description: 'Cast solid brass with warm dimmed tones for tactile sanctuary spaces.',
+    button_text: 'Explore Homeware',
+    button_url: '/category/home-living',
+    image: 'https://images.unsplash.com/photo-1616046229478-9901c5536a45?auto=format&fit=crop&w=1000&q=80',
+  },
+]
+
+const resolvedBanners = computed(() => {
+  if (Array.isArray(props.banners) && props.banners.length > 0) {
+    return props.banners
+  }
+  const custom = settingsStore.publicSettings?.promo_banners
+  if (Array.isArray(custom) && custom.length > 0) {
+    return custom
+  }
+  return defaultBanners
 })
 </script>
 
@@ -31,7 +48,7 @@ const props = defineProps({
   <section class="max-w-container mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
       <div
-        v-for="(banner, idx) in banners"
+        v-for="(banner, idx) in resolvedBanners"
         :key="'promo-' + idx"
         class="group relative rounded-card overflow-hidden min-h-[340px] sm:min-h-[400px] flex items-end p-6 sm:p-10 shadow-soft border border-line"
       >

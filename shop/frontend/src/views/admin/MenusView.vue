@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import {
   Menu as MenuIcon,
@@ -13,9 +13,18 @@ import {
   Loader2,
   ExternalLink,
   Upload,
+  ArrowUp,
+  ArrowDown,
+  Eye,
+  ArrowRight,
 } from 'lucide-vue-next'
+import { useMenuStore } from '@/stores/menu'
+
+const menuStore = useMenuStore()
 
 const menus = ref([])
+const categories = ref([])
+const cmsPages = ref([])
 const selectedMenuId = ref(null)
 const currentMenu = ref(null)
 const loading = ref(true)
@@ -26,6 +35,7 @@ const successMessage = ref('')
 
 const isItemModalOpen = ref(false)
 const editingItem = ref(null)
+const previewTopItemId = ref(null)
 
 const itemForm = ref({
   label: '',
@@ -44,16 +54,39 @@ const itemForm = ref({
   is_active: true,
 })
 
-async function fetchMenus() {
+const previewTopItem = computed(() => {
+  const topItems = getTopLevelItems()
+  if (!topItems.length) return null
+  if (previewTopItemId.value) {
+    const found = topItems.find((i) => i.id === previewTopItemId.value)
+    if (found) return found
+  }
+  return topItems[0]
+})
+
+async function fetchMenusAndTargets() {
   loading.value = true
   try {
-    const res = await axios.get('/api/admin/menus')
-    menus.value = res.data.data
-    if (menus.value.length > 0 && !selectedMenuId.value) {
-      selectedMenuId.value = menus.value[0].id
+    const [menusRes, catsRes, pagesRes] = await Promise.allSettled([
+      axios.get('/api/admin/menus'),
+      axios.get('/api/categories'),
+      axios.get('/api/admin/pages'),
+    ])
+
+    if (menusRes.status === 'fulfilled') {
+      menus.value = menusRes.value.data.data || []
+      if (menus.value.length > 0 && !selectedMenuId.value) {
+        selectedMenuId.value = menus.value[0].id
+      }
+      if (selectedMenuId.value) {
+        await loadMenuDetails(selectedMenuId.value)
+      }
     }
-    if (selectedMenuId.value) {
-      await loadMenuDetails(selectedMenuId.value)
+    if (catsRes.status === 'fulfilled') {
+      categories.value = catsRes.value.data.data || []
+    }
+    if (pagesRes.status === 'fulfilled') {
+      cmsPages.value = pagesRes.value.data.data || []
     }
   } catch (err) {
     errorMessage.value = err.response?.data?.message || 'Failed to load menus.'
@@ -67,30 +100,56 @@ async function loadMenuDetails(id) {
   try {
     const res = await axios.get(`/api/admin/menus/${id}`)
     currentMenu.value = res.data.data
+    const top = getTopLevelItems()
+    if (top.length > 0 && !top.some((i) => i.id === previewTopItemId.value)) {
+      previewTopItemId.value = top[0].id
+    }
   } catch (err) {
     errorMessage.value = err.response?.data?.message || 'Failed to load menu details.'
   }
 }
 
 onMounted(() => {
-  fetchMenus()
+  fetchMenusAndTargets()
 })
 
 function getTopLevelItems() {
   if (!currentMenu.value?.all_items) return []
-  return currentMenu.value.all_items.filter((i) => !i.parent_id)
+  return [...currentMenu.value.all_items]
+    .filter((i) => !i.parent_id)
+    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
 }
 
 function getChildren(parentId) {
   if (!currentMenu.value?.all_items) return []
-  return currentMenu.value.all_items.filter((i) => i.parent_id === parentId)
+  return [...currentMenu.value.all_items]
+    .filter((i) => i.parent_id === parentId)
+    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+}
+
+function onTargetCategorySelect(catId) {
+  const cat = categories.value.find((c) => Number(c.id) === Number(catId))
+  if (cat) {
+    itemForm.value.target_id = cat.id
+    if (!itemForm.value.label) itemForm.value.label = cat.name
+    itemForm.value.url = `/category/${cat.slug}`
+  }
+}
+
+function onTargetPageSelect(pageId) {
+  const pg = cmsPages.value.find((p) => Number(p.id) === Number(pageId))
+  if (pg) {
+    itemForm.value.target_id = pg.id
+    if (!itemForm.value.label) itemForm.value.label = pg.title
+    itemForm.value.url = `/page/${pg.slug}`
+  }
 }
 
 function openCreateItem(parentId = null) {
   editingItem.value = null
   itemForm.value = {
     label: '',
-    type: parentId ? 'category' : 'category',
+    type: parentId ? 'mega_group' : 'category',
     parent_id: parentId || '',
     target_id: null,
     url: '',
@@ -101,7 +160,7 @@ function openCreateItem(parentId = null) {
     featured_button_url: '',
     badge_text: '',
     sort_order: (currentMenu.value?.all_items?.length || 0) + 1,
-    column_index: 0,
+    column_index: parentId ? 1 : 0,
     is_active: true,
   }
   isItemModalOpen.value = true
@@ -128,6 +187,30 @@ function openEditItem(item) {
   isItemModalOpen.value = true
 }
 
+async function moveItem(siblings, index, direction) {
+  const targetIdx = index + direction
+  if (targetIdx < 0 || targetIdx >= siblings.length) return
+
+  const reordered = [...siblings]
+  const [moved] = reordered.splice(index, 1)
+  reordered.splice(targetIdx, 0, moved)
+
+  const payload = reordered.map((item, idx) => ({
+    id: item.id,
+    sort_order: idx + 1,
+    parent_id: item.parent_id || null,
+    column_index: item.column_index || 0,
+  }))
+
+  try {
+    await axios.post(`/api/admin/menus/${selectedMenuId.value}/reorder`, { items: payload })
+    await loadMenuDetails(selectedMenuId.value)
+    await menuStore.fetchMenu(currentMenu.value?.slug || 'main-header', true)
+  } catch (err) {
+    errorMessage.value = err.response?.data?.message || 'Failed to reorder items.'
+  }
+}
+
 async function handleSaveItem() {
   saving.value = true
   errorMessage.value = ''
@@ -142,14 +225,15 @@ async function handleSaveItem() {
 
     if (editingItem.value) {
       await axios.put(`/api/admin/menus/items/${editingItem.value.id}`, payload)
-      successMessage.value = 'Menu item updated.'
+      successMessage.value = 'Menu item updated and storefront cache cleared.'
     } else {
       await axios.post(`/api/admin/menus/${selectedMenuId.value}/items`, payload)
-      successMessage.value = 'Menu item added.'
+      successMessage.value = 'Menu item added and storefront cache cleared.'
     }
 
     isItemModalOpen.value = false
     await loadMenuDetails(selectedMenuId.value)
+    await menuStore.fetchMenu(currentMenu.value?.slug || 'main-header', true)
   } catch (err) {
     errorMessage.value = err.response?.data?.message || 'Failed to save menu item.'
   } finally {
@@ -164,6 +248,7 @@ async function handleDeleteItem(item) {
     await axios.delete(`/api/admin/menus/items/${item.id}`)
     successMessage.value = `Item "${item.label}" deleted.`
     await loadMenuDetails(selectedMenuId.value)
+    await menuStore.fetchMenu(currentMenu.value?.slug || 'main-header', true)
   } catch (err) {
     errorMessage.value = err.response?.data?.message || 'Failed to delete menu item.'
   }
@@ -197,21 +282,28 @@ async function handleImageUpload(e) {
       <div>
         <h1 class="text-2xl font-bold tracking-tight text-gray-900">Mega Menu & Navigation Builder</h1>
         <p class="text-sm text-gray-500 mt-1">
-          Build rich multi-column mega menus (up to 5 columns with groups and featured image banners).
+          Visual tree editor for Main Header & Footer navigation with up to 5 mega-menu columns and featured banner cards.
         </p>
       </div>
 
-      <div class="flex items-center gap-3">
-        <!-- Switch Menu Select -->
-        <select
-          v-model="selectedMenuId"
-          class="px-3.5 py-2 rounded-xl border border-gray-200 bg-white text-sm font-medium focus:ring-2 focus:ring-[#2F5D50]"
-          @change="loadMenuDetails(selectedMenuId)"
-        >
-          <option v-for="menu in menus" :key="menu.id" :value="menu.id">
-            {{ menu.name }} ({{ menu.slug }})
-          </option>
-        </select>
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- Separate Editor Tabs for Main Menu & Footer Menu -->
+        <div class="inline-flex items-center p-1 rounded-full bg-gray-100 border border-gray-200">
+          <button
+            v-for="menu in menus"
+            :key="menu.id"
+            type="button"
+            class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition"
+            :class="
+              selectedMenuId === menu.id
+                ? 'bg-white text-[#2F5D50] shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            "
+            @click="loadMenuDetails(menu.id)"
+          >
+            {{ menu.name }}
+          </button>
+        </div>
 
         <button
           class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#2F5D50] text-white text-xs font-medium hover:bg-[#264a40] transition-colors shadow-sm"
@@ -256,16 +348,145 @@ async function handleImageUpload(e) {
       No menu selected.
     </div>
 
-    <div v-else class="space-y-4">
+    <div v-else class="space-y-6">
+      <!-- LIVE MEGA MENU PREVIEW PANEL -->
       <div
-        v-for="topItem in getTopLevelItems()"
+        v-if="getTopLevelItems().length > 0"
+        class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden"
+      >
+        <div class="px-5 py-3 bg-gray-50 border-b border-gray-200 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-700">
+            <Eye class="w-4 h-4 text-[#2F5D50]" />
+            <span>Live Mega Menu Preview ({{ currentMenu.name }})</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span class="text-xs text-gray-500 mr-1">Preview top item:</span>
+            <button
+              v-for="tItem in getTopLevelItems()"
+              :key="'prev-btn-' + tItem.id"
+              type="button"
+              @click="previewTopItemId = tItem.id"
+              class="px-3 py-1 rounded-full text-xs font-medium transition"
+              :class="
+                previewTopItem?.id === tItem.id
+                  ? 'bg-[#2F5D50] text-white'
+                  : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100'
+              "
+            >
+              {{ tItem.label }}
+            </button>
+          </div>
+        </div>
+
+        <div v-if="previewTopItem" class="p-6 bg-[#FAF9F6]">
+          <div
+            v-if="getChildren(previewTopItem.id).length === 0 && !previewTopItem.image && !previewTopItem.featured_title"
+            class="text-center py-6 text-xs text-gray-500"
+          >
+            "{{ previewTopItem.label }}" is a direct link (<span class="font-mono">{{ previewTopItem.url || '/' }}</span>) with no mega-menu columns yet. Click <strong>+ Add Child/Column</strong> below to turn it into a multi-column mega menu.
+          </div>
+
+          <div v-else class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+              <!-- Columns Area -->
+              <div
+                :class="
+                  previewTopItem.image || previewTopItem.featured_title
+                    ? 'md:col-span-8 lg:col-span-9 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6'
+                    : 'md:col-span-12 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6'
+                "
+              >
+                <div
+                  v-for="colItem in getChildren(previewTopItem.id)"
+                  :key="'prev-col-' + colItem.id"
+                  class="space-y-2.5"
+                >
+                  <div class="text-xs font-bold uppercase tracking-wider text-gray-900 border-b border-gray-100 pb-1.5 flex items-center gap-1.5">
+                    <span>{{ colItem.label }}</span>
+                    <span
+                      v-if="colItem.badge_text"
+                      class="px-1.5 py-0.5 rounded-full text-[9px] bg-emerald-50 text-emerald-700"
+                    >
+                      {{ colItem.badge_text }}
+                    </span>
+                  </div>
+                  <ul class="space-y-1.5 text-xs text-gray-600">
+                    <li
+                      v-for="subLink in getChildren(colItem.id)"
+                      :key="'prev-sub-' + subLink.id"
+                      class="hover:text-[#2F5D50] flex items-center gap-1.5"
+                    >
+                      <span>{{ subLink.label }}</span>
+                      <span
+                        v-if="subLink.badge_text"
+                        class="px-1.5 py-0.2 rounded-full text-[9px] bg-amber-50 text-amber-700 font-semibold"
+                      >
+                        {{ subLink.badge_text }}
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <!-- Featured Card Preview -->
+              <div
+                v-if="previewTopItem.image || previewTopItem.featured_title"
+                class="md:col-span-4 lg:col-span-3 rounded-xl overflow-hidden border border-gray-100 bg-gray-50 flex flex-col justify-between"
+              >
+                <img
+                  v-if="previewTopItem.image"
+                  :src="previewTopItem.image"
+                  :alt="previewTopItem.featured_title || previewTopItem.label"
+                  class="w-full h-36 object-cover"
+                />
+                <div class="p-4 space-y-2">
+                  <h4 class="text-sm font-bold text-gray-900">
+                    {{ previewTopItem.featured_title || previewTopItem.label }}
+                  </h4>
+                  <span
+                    v-if="previewTopItem.featured_button_text"
+                    class="inline-flex items-center gap-1 text-xs font-semibold text-[#2F5D50]"
+                  >
+                    <span>{{ previewTopItem.featured_button_text }}</span>
+                    <ArrowRight class="w-3 h-3" />
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TREE BUILDER CARDS -->
+      <div
+        v-for="(topItem, topIdx) in getTopLevelItems()"
         :key="topItem.id"
         class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4"
       >
         <!-- Top Level Item Header -->
-        <div class="flex items-center justify-between border-b border-gray-100 pb-3">
-          <div class="flex items-center gap-3">
-            <span class="text-xs font-mono font-bold text-gray-400">#{{ topItem.sort_order }}</span>
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-3">
+          <div class="flex items-center gap-2.5">
+            <div class="flex flex-col gap-0.5">
+              <button
+                type="button"
+                :disabled="topIdx === 0"
+                class="p-0.5 text-gray-400 hover:text-gray-700 disabled:opacity-30"
+                title="Move Up"
+                @click="moveItem(getTopLevelItems(), topIdx, -1)"
+              >
+                <ArrowUp class="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                :disabled="topIdx === getTopLevelItems().length - 1"
+                class="p-0.5 text-gray-400 hover:text-gray-700 disabled:opacity-30"
+                title="Move Down"
+                @click="moveItem(getTopLevelItems(), topIdx, 1)"
+              >
+                <ArrowDown class="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <span class="text-xs font-mono font-bold text-gray-400">#{{ topIdx + 1 }}</span>
             <span class="text-base font-bold text-gray-900">{{ topItem.label }}</span>
             <span
               v-if="topItem.badge_text"
@@ -329,13 +550,29 @@ async function handleImageUpload(e) {
         <!-- Children / Mega Columns Grid -->
         <div v-if="getChildren(topItem.id).length > 0" class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-3 pt-1">
           <div
-            v-for="child in getChildren(topItem.id)"
+            v-for="(child, childIdx) in getChildren(topItem.id)"
             :key="child.id"
             class="p-3 rounded-xl border border-gray-100 bg-gray-50/50 space-y-2"
           >
             <div class="flex items-center justify-between text-xs">
               <span class="font-semibold text-gray-900 truncate">{{ child.label }}</span>
-              <div class="flex items-center gap-1">
+              <div class="flex items-center gap-0.5">
+                <button
+                  type="button"
+                  :disabled="childIdx === 0"
+                  class="p-0.5 text-gray-400 hover:text-gray-700 disabled:opacity-30"
+                  @click="moveItem(getChildren(topItem.id), childIdx, -1)"
+                >
+                  <ArrowUp class="w-3 h-3" />
+                </button>
+                <button
+                  type="button"
+                  :disabled="childIdx === getChildren(topItem.id).length - 1"
+                  class="p-0.5 text-gray-400 hover:text-gray-700 disabled:opacity-30"
+                  @click="moveItem(getChildren(topItem.id), childIdx, 1)"
+                >
+                  <ArrowDown class="w-3 h-3" />
+                </button>
                 <button class="p-1 text-gray-400 hover:text-gray-700" @click="openEditItem(child)">
                   <Edit2 class="w-3 h-3" />
                 </button>
@@ -353,12 +590,28 @@ async function handleImageUpload(e) {
             <!-- Nested Sub-items (if group) -->
             <div v-if="getChildren(child.id).length > 0" class="pt-2 border-t border-gray-200/60 space-y-1">
               <div
-                v-for="sub in getChildren(child.id)"
+                v-for="(sub, subIdx) in getChildren(child.id)"
                 :key="sub.id"
                 class="flex items-center justify-between text-[11px] text-gray-600 bg-white p-1.5 rounded-lg border border-gray-100"
               >
                 <span class="truncate">{{ sub.label }}</span>
                 <div class="flex items-center gap-1">
+                  <button
+                    type="button"
+                    :disabled="subIdx === 0"
+                    class="text-gray-400 hover:text-gray-700 disabled:opacity-30"
+                    @click="moveItem(getChildren(child.id), subIdx, -1)"
+                  >
+                    <ArrowUp class="w-2.5 h-2.5" />
+                  </button>
+                  <button
+                    type="button"
+                    :disabled="subIdx === getChildren(child.id).length - 1"
+                    class="text-gray-400 hover:text-gray-700 disabled:opacity-30"
+                    @click="moveItem(getChildren(child.id), subIdx, 1)"
+                  >
+                    <ArrowDown class="w-2.5 h-2.5" />
+                  </button>
                   <button class="text-gray-400 hover:text-gray-700" @click="openEditItem(sub)">
                     <Edit2 class="w-2.5 h-2.5" />
                   </button>
@@ -370,7 +623,6 @@ async function handleImageUpload(e) {
             </div>
 
             <button
-              v-if="child.type === 'mega_group'"
               class="w-full text-center py-1 rounded text-[10px] font-medium text-gray-500 hover:bg-gray-200/50"
               @click="openCreateItem(child.id)"
             >
@@ -395,17 +647,6 @@ async function handleImageUpload(e) {
         </div>
 
         <form class="space-y-4" @submit.prevent="handleSaveItem">
-          <div>
-            <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Item Label *</label>
-            <input
-              v-model="itemForm.label"
-              required
-              type="text"
-              placeholder="e.g. Women, Clothing, Tops"
-              class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2F5D50] text-sm"
-            />
-          </div>
-
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Type</label>
@@ -435,13 +676,53 @@ async function handleImageUpload(e) {
             </div>
           </div>
 
+          <!-- Quick Picker for Category or CMS Page -->
+          <div v-if="itemForm.type === 'category' && categories.length > 0">
+            <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Select Category</label>
+            <select
+              :value="itemForm.target_id || ''"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2F5D50] text-sm"
+              @change="onTargetCategorySelect($event.target.value)"
+            >
+              <option value="">-- Choose a category to auto-fill URL --</option>
+              <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                {{ cat.name }} (/category/{{ cat.slug }})
+              </option>
+            </select>
+          </div>
+
+          <div v-if="itemForm.type === 'page' && cmsPages.length > 0">
+            <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Select CMS Page</label>
+            <select
+              :value="itemForm.target_id || ''"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2F5D50] text-sm"
+              @change="onTargetPageSelect($event.target.value)"
+            >
+              <option value="">-- Choose a CMS page to auto-fill URL --</option>
+              <option v-for="pg in cmsPages" :key="pg.id" :value="pg.id">
+                {{ pg.title }} (/page/{{ pg.slug }})
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Item Label *</label>
+            <input
+              v-model="itemForm.label"
+              required
+              type="text"
+              placeholder="e.g. Women, Clothing, Tops"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2F5D50] text-sm"
+            />
+          </div>
+
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Target URL</label>
               <input
                 v-model="itemForm.url"
                 type="text"
-                placeholder="/category/women or https://..."
+                placeholder="/category/women or /page/about"
                 class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2F5D50] text-sm font-mono"
               />
             </div>
@@ -459,7 +740,7 @@ async function handleImageUpload(e) {
           <!-- Featured Card Section (Optional) -->
           <div class="p-3.5 rounded-xl border border-gray-100 bg-gray-50/70 space-y-3">
             <span class="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
-              Mega Menu Featured Banner (Optional)
+              Mega Menu Featured Banner Card (Optional)
             </span>
             <div class="flex items-center gap-3">
               <img

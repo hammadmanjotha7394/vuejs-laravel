@@ -4,8 +4,10 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FinanceController;
+use App\Http\Controllers\Admin\MarketingController;
 use App\Http\Controllers\Admin\MenuController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingController;
@@ -48,9 +50,12 @@ Route::get('/catalog/filters', [PublicProductController::class, 'filters']);
 Route::post('/products/{id}/reviews', [PublicProductController::class, 'storeReview']);
 Route::post('/reviews/{id}/helpful', [PublicProductController::class, 'voteHelpful']);
 
-// Public Marketing & Newsletter
+// Public Marketing, CMS Pages & Newsletter
 Route::get('/hero-slides', [PublicMarketingController::class, 'heroSlides']);
 Route::get('/popups', [PublicMarketingController::class, 'popups']);
+Route::post('/popups/{popup}/track', [PublicMarketingController::class, 'trackPopup']);
+Route::get('/pages', [PublicMarketingController::class, 'pages']);
+Route::get('/pages/{slug}', [PublicMarketingController::class, 'pageShow']);
 Route::get('/reviews/featured', [PublicMarketingController::class, 'featuredReviews']);
 Route::post('/newsletter/subscribe', [PublicMarketingController::class, 'subscribe']);
 
@@ -196,5 +201,30 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/customers/export-csv', [CustomerController::class, 'exportCsv'])->middleware('permission:users.view');
         Route::get('/customers/{customer}', [CustomerController::class, 'show'])->middleware('permission:users.view');
         Route::put('/customers/{customer}', [CustomerController::class, 'update'])->middleware('permission:users.update|orders.update');
+
+        // Hero Slides & Home Banners / Trust Points
+        Route::get('/hero-slides', [MarketingController::class, 'heroIndex'])->middleware('permission:hero.manage');
+        Route::post('/hero-slides', [MarketingController::class, 'heroStore'])->middleware('permission:hero.manage');
+        Route::post('/hero-slides/reorder', [MarketingController::class, 'heroReorder'])->middleware('permission:hero.manage');
+        Route::post('/hero-slides/upload-image', [MarketingController::class, 'uploadImage'])->middleware('permission:hero.manage|popups.manage');
+        Route::put('/hero-slides/{slide}', [MarketingController::class, 'heroUpdate'])->middleware('permission:hero.manage');
+        Route::delete('/hero-slides/{slide}', [MarketingController::class, 'heroDestroy'])->middleware('permission:hero.manage');
+
+        Route::get('/marketing/home-blocks', [MarketingController::class, 'homeBlocksIndex'])->middleware('permission:hero.manage|settings.view');
+        Route::put('/marketing/home-blocks', [MarketingController::class, 'homeBlocksUpdate'])->middleware('permission:hero.manage|settings.update');
+
+        // Promotional Popups
+        Route::get('/popups', [MarketingController::class, 'popupsIndex'])->middleware('permission:popups.manage');
+        Route::post('/popups', [MarketingController::class, 'popupsStore'])->middleware('permission:popups.manage');
+        Route::post('/popups/upload-image', [MarketingController::class, 'uploadImage'])->middleware('permission:popups.manage|hero.manage');
+        Route::put('/popups/{popup}', [MarketingController::class, 'popupsUpdate'])->middleware('permission:popups.manage');
+        Route::delete('/popups/{popup}', [MarketingController::class, 'popupsDestroy'])->middleware('permission:popups.manage');
+
+        // CMS Pages
+        Route::get('/pages', [PageController::class, 'index'])->middleware('permission:pages.manage|menus.manage');
+        Route::post('/pages', [PageController::class, 'store'])->middleware('permission:pages.manage');
+        Route::get('/pages/{page}', [PageController::class, 'show'])->middleware('permission:pages.manage');
+        Route::put('/pages/{page}', [PageController::class, 'update'])->middleware('permission:pages.manage');
+        Route::delete('/pages/{page}', [PageController::class, 'destroy'])->middleware('permission:pages.manage');
     });
 });

@@ -14,6 +14,7 @@ import WishlistView from '@/views/store/WishlistView.vue'
 import CheckoutView from '@/views/store/CheckoutView.vue'
 import CheckoutSuccessView from '@/views/store/CheckoutSuccessView.vue'
 import CheckoutCancelView from '@/views/store/CheckoutCancelView.vue'
+import PageView from '@/views/store/PageView.vue'
 
 import AccountLayout from '@/views/store/account/AccountLayout.vue'
 import AccountOverviewView from '@/views/store/account/AccountOverviewView.vue'
@@ -64,6 +65,11 @@ const routes = [
         path: 'products/:slug',
         name: 'product.detail',
         component: ProductDetailView,
+      },
+      {
+        path: 'page/:slug',
+        name: 'page.show',
+        component: PageView,
       },
       {
         path: 'cart',
@@ -257,11 +263,7 @@ const routes = [
       {
         path: 'marketing',
         name: 'admin.marketing',
-        component: () => import('@/views/admin/AdminModulePlaceholderView.vue'),
-        meta: {
-          title: 'Marketing (Hero Slides, Popups & Banners)',
-          description: 'Configure homepage hero slides, promotional popups, newsletter signups, and trust banners.',
-        },
+        component: () => import('@/views/admin/MarketingView.vue'),
       },
       {
         path: 'menus',
@@ -272,12 +274,8 @@ const routes = [
       {
         path: 'pages',
         name: 'admin.pages',
-        component: () => import('@/views/admin/AdminModulePlaceholderView.vue'),
-        meta: {
-          permission: 'pages.manage',
-          title: 'CMS Pages',
-          description: 'Edit About, FAQ, Shipping, Returns, Privacy Policy, and Terms of Service pages.',
-        },
+        component: () => import('@/views/admin/PagesView.vue'),
+        meta: { permission: 'pages.manage' },
       },
       {
         path: 'finance',

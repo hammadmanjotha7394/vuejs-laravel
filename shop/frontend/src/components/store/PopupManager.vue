@@ -18,6 +18,22 @@ let delayTimer = null
 let scrollHandler = null
 let exitIntentHandler = null
 
+const isEligibleByPage = (popup) => {
+  if (route.path.startsWith('/checkout') || route.path.startsWith('/admin')) return false
+
+  const pages = popup.show_on_pages_json
+  if (!Array.isArray(pages) || pages.length === 0 || pages.includes('all')) {
+    return true
+  }
+  if (pages.includes('home') && route.path === '/') {
+    return true
+  }
+  return pages.some((p) => {
+    const clean = String(p).trim()
+    return clean && (route.path === clean || route.path.startsWith(clean))
+  })
+}
+
 const isEligibleByFrequency = (popup) => {
   const id = popup.id
   const freq = popup.frequency || 'once_per_session'
@@ -55,15 +71,23 @@ const markPopupAsSeen = (popup) => {
   }
 }
 
+const trackPopupEvent = async (popupId, action) => {
+  if (!popupId) return
+  try {
+    await axios.post(`/api/popups/${popupId}/track`, { action })
+  } catch (e) {
+    // Non-fatal
+  }
+}
+
 const showPopup = (popup) => {
-  // Never show on checkout
-  if (route.path.startsWith('/checkout')) return
-  // Never show two at once
+  if (!isEligibleByPage(popup)) return
   if (activePopup.value) return
 
   if (isEligibleByFrequency(popup)) {
     activePopup.value = popup
     markPopupAsSeen(popup)
+    trackPopupEvent(popup.id, 'view')
   }
 }
 
@@ -73,6 +97,13 @@ const closePopup = () => {
   emailInput.value = ''
 }
 
+const handleCtaClick = () => {
+  if (activePopup.value) {
+    trackPopupEvent(activePopup.value.id, 'click')
+  }
+  closePopup()
+}
+
 const handleNewsletterSubmit = async () => {
   if (!emailInput.value.trim()) return
 
@@ -80,6 +111,7 @@ const handleNewsletterSubmit = async () => {
   try {
     const response = await axios.post('/api/newsletter/subscribe', {
       email: emailInput.value.trim(),
+      popup_id: activePopup.value?.id || null,
     })
     subscribed.value = true
     toastStore.success(response.data.message || 'Subscribed successfully!')
@@ -106,7 +138,7 @@ const handleKeyDown = (e) => {
 const setupTriggers = () => {
   if (popups.value.length === 0) return
 
-  const candidate = popups.value.find((p) => isEligibleByFrequency(p))
+  const candidate = popups.value.find((p) => isEligibleByPage(p) && isEligibleByFrequency(p))
   if (!candidate) return
 
   const trigger = candidate.trigger || 'delay'
@@ -206,79 +238,103 @@ onUnmounted(() => {
           <X class="w-4 h-4" />
         </button>
 
-        <!-- Optional image -->
-        <div
-          v-if="activePopup.image"
-          class="w-full md:w-5/12 aspect-[4/3] md:aspect-auto relative bg-surface overflow-hidden flex-shrink-0"
-        >
+        <!-- Image-Only Popup Mode -->
+        <div v-if="activePopup.type === 'image_only' && activePopup.image" class="w-full">
+          <a
+            v-if="activePopup.button_url"
+            :href="activePopup.button_url"
+            @click="handleCtaClick"
+            class="block w-full"
+          >
+            <img
+              :src="activePopup.image"
+              :alt="activePopup.title || activePopup.name"
+              class="w-full max-h-[460px] object-cover"
+            />
+          </a>
           <img
+            v-else
             :src="activePopup.image"
-            :alt="activePopup.title"
-            class="w-full h-full object-cover"
+            :alt="activePopup.title || activePopup.name"
+            class="w-full max-h-[460px] object-cover"
           />
         </div>
 
-        <!-- Popup content -->
-        <div class="p-6 md:p-8 flex-1 flex flex-col justify-between">
-          <div>
-            <span
-              v-if="activePopup.type === 'newsletter'"
-              class="inline-block text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-pill bg-brand/10 text-brand mb-2"
-            >
-              Exclusive Invitation
-            </span>
-
-            <h3 class="text-lg sm:text-xl font-bold text-ink tracking-tight">
-              {{ activePopup.title }}
-            </h3>
-
-            <p class="text-xs text-ink-muted leading-relaxed mt-2.5">
-              {{ activePopup.body }}
-            </p>
+        <template v-else>
+          <!-- Optional side image -->
+          <div
+            v-if="activePopup.image"
+            class="w-full md:w-5/12 aspect-[4/3] md:aspect-auto relative bg-surface overflow-hidden flex-shrink-0"
+          >
+            <img
+              :src="activePopup.image"
+              :alt="activePopup.title"
+              class="w-full h-full object-cover"
+            />
           </div>
 
-          <!-- Newsletter Form -->
-          <div v-if="activePopup.type === 'newsletter'" class="mt-6">
-            <div
-              v-if="subscribed"
-              class="flex items-center gap-2 p-3 bg-emerald-50 rounded-lg border border-emerald-200 text-xs text-success font-medium"
-            >
-              <CheckCircle2 class="w-4 h-4 flex-shrink-0" />
-              <span>Thank you! Your private voucher is in your inbox.</span>
-            </div>
-            <form v-else @submit.prevent="handleNewsletterSubmit" class="space-y-2">
-              <input
-                v-model="emailInput"
-                type="email"
-                required
-                placeholder="Enter your email address"
-                class="w-full px-3.5 py-2.5 bg-surface border border-line rounded-input text-xs text-ink placeholder:text-ink-muted focus:outline-none focus:border-brand transition"
-              />
-              <button
-                type="submit"
-                :disabled="isSubscribing"
-                class="w-full py-2.5 px-4 rounded-pill bg-brand text-white text-xs font-semibold hover:opacity-90 transition flex items-center justify-center gap-2 disabled:opacity-60 shadow-sm"
+          <!-- Popup content -->
+          <div class="p-6 md:p-8 flex-1 flex flex-col justify-between">
+            <div>
+              <span
+                v-if="activePopup.type === 'newsletter'"
+                class="inline-block text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-pill bg-brand/10 text-brand mb-2"
               >
-                <Loader2 v-if="isSubscribing" class="w-3.5 h-3.5 animate-spin" />
-                <span>{{ activePopup.button_text || 'Claim Your Voucher' }}</span>
-                <ArrowRight v-if="!isSubscribing" class="w-3.5 h-3.5" />
-              </button>
-            </form>
-          </div>
+                Exclusive Invitation
+              </span>
 
-          <!-- Standard CTA Button -->
-          <div v-else-if="activePopup.button_text" class="mt-6">
-            <a
-              v-if="activePopup.button_url"
-              :href="activePopup.button_url"
-              @click="closePopup"
-              class="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-pill bg-brand text-white text-xs font-semibold hover:opacity-90 transition shadow-sm"
-            >
-              <span>{{ activePopup.button_text }}</span>
-              <ArrowRight class="w-3.5 h-3.5" />
-            </a>
+              <h3 class="text-lg sm:text-xl font-bold text-ink tracking-tight">
+                {{ activePopup.title }}
+              </h3>
+
+              <p class="text-xs text-ink-muted leading-relaxed mt-2.5">
+                {{ activePopup.body }}
+              </p>
+            </div>
+
+            <!-- Newsletter Form -->
+            <div v-if="activePopup.type === 'newsletter'" class="mt-6">
+              <div
+                v-if="subscribed"
+                class="flex items-center gap-2 p-3 bg-emerald-50 rounded-lg border border-emerald-200 text-xs text-success font-medium"
+              >
+                <CheckCircle2 class="w-4 h-4 flex-shrink-0" />
+                <span>Thank you! Your private voucher is in your inbox.</span>
+              </div>
+              <form v-else @submit.prevent="handleNewsletterSubmit" class="space-y-2">
+                <input
+                  v-model="emailInput"
+                  type="email"
+                  required
+                  placeholder="Enter your email address"
+                  class="w-full px-3.5 py-2.5 bg-surface border border-line rounded-input text-xs text-ink placeholder:text-ink-muted focus:outline-none focus:border-brand transition"
+                />
+                <button
+                  type="submit"
+                  :disabled="isSubscribing"
+                  class="w-full py-2.5 px-4 rounded-pill bg-brand text-white text-xs font-semibold hover:opacity-90 transition flex items-center justify-center gap-2 disabled:opacity-60 shadow-sm"
+                >
+                  <Loader2 v-if="isSubscribing" class="w-3.5 h-3.5 animate-spin" />
+                  <span>{{ activePopup.button_text || 'Claim Your Voucher' }}</span>
+                  <ArrowRight v-if="!isSubscribing" class="w-3.5 h-3.5" />
+                </button>
+              </form>
+            </div>
+
+            <!-- Standard CTA Button -->
+            <div v-else-if="activePopup.button_text" class="mt-6">
+              <a
+                v-if="activePopup.button_url"
+                :href="activePopup.button_url"
+                @click="handleCtaClick"
+                class="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-pill bg-brand text-white text-xs font-semibold hover:opacity-90 transition shadow-sm"
+              >
+                <span>{{ activePopup.button_text }}</span>
+                <ArrowRight class="w-3.5 h-3.5" />
+              </a>
+            </div>
           </div>
-        </div>
+        </template>
       </div>
     </div>
   </Transition>

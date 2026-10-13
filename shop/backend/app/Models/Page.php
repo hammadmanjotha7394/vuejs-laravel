@@ -18,10 +18,19 @@ class Page extends Model
         'seo_description',
     ];
 
+    protected $appends = [
+        'content_html',
+    ];
+
     protected function casts(): array
     {
         return [
             'is_published' => 'boolean',
         ];
+    }
+
+    public function getContentHtmlAttribute(): string
+    {
+        return (string) ($this->attributes['content'] ?? '');
     }
 }

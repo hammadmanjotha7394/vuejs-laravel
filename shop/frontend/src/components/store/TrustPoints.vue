@@ -1,37 +1,52 @@
 <script setup>
 import { computed } from 'vue'
-import { Truck, RotateCcw, ShieldCheck, Headphones } from 'lucide-vue-next'
+import { Truck, RotateCcw, ShieldCheck, Headphones, Sparkles, Award } from 'lucide-vue-next'
 import { useSettingsStore } from '@/stores/settings'
 
 const settingsStore = useSettingsStore()
 
+const iconMap = {
+  Truck,
+  RotateCcw,
+  ShieldCheck,
+  Headphones,
+  Sparkles,
+  Award,
+}
+
+const defaultPoints = [
+  {
+    icon: Truck,
+    title: 'Carbon-Neutral Delivery',
+    desc: 'Free standard shipping on all domestic orders over $75.',
+  },
+  {
+    icon: RotateCcw,
+    title: '30-Day Calm Return',
+    desc: 'Prepaid recyclable labels and effortless exchange processing.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Direct Artisan Provenance',
+    desc: 'Collaborations with small family-owned European & Japanese workshops.',
+  },
+  {
+    icon: Headphones,
+    title: 'Dedicated Human Support',
+    desc: 'Reach our studio concierge 7 days a week for honest guidance.',
+  },
+]
+
 const trustPoints = computed(() => {
   const custom = settingsStore.publicSettings?.trust_points
-  if (Array.isArray(custom) && custom.length === 4) {
-    return custom
+  if (Array.isArray(custom) && custom.length > 0) {
+    return custom.map((pt, idx) => ({
+      icon: typeof pt.icon === 'string' ? iconMap[pt.icon] || defaultPoints[idx % 4].icon : pt.icon || defaultPoints[idx % 4].icon,
+      title: pt.title || defaultPoints[idx % 4].title,
+      desc: pt.desc || pt.description || defaultPoints[idx % 4].desc,
+    }))
   }
-  return [
-    {
-      icon: Truck,
-      title: 'Carbon-Neutral Delivery',
-      desc: 'Free standard shipping on all domestic orders over $75.',
-    },
-    {
-      icon: RotateCcw,
-      title: '30-Day Calm Return',
-      desc: 'Prepaid recyclable labels and effortless exchange processing.',
-    },
-    {
-      icon: ShieldCheck,
-      title: 'Direct Artisan Provenance',
-      desc: 'Collaborations with small family-owned European & Japanese workshops.',
-    },
-    {
-      icon: Headphones,
-      title: 'Dedicated Human Support',
-      desc: 'Reach our studio concierge 7 days a week for honest guidance.',
-    },
-  ]
+  return defaultPoints
 })
 </script>
 

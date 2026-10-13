@@ -104,6 +104,8 @@ class SettingService
         'require_email_verification' => 'store',
         'low_stock_threshold' => 'store',
         'low_stock_email' => 'store',
+        'promo_banners' => 'marketing',
+        'trust_points' => 'marketing',
     ];
 
     /**
@@ -344,6 +346,8 @@ class SettingService
                     'description' => self::get('seo_description', ''),
                     'social_image' => self::get('seo_social_image'),
                 ],
+                'promo_banners' => self::getJson('promo_banners', []),
+                'trust_points' => self::getJson('trust_points', []),
             ];
         });
     }
