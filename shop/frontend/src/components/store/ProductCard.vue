@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { Heart, Star, ShoppingBag, ArrowRight, Play } from 'lucide-vue-next'
+import { Heart, Star, ShoppingBag, ArrowRight, Play, Zap, Loader2 } from 'lucide-vue-next'
 import { useWishlistStore } from '@/stores/wishlist'
 import { useCartStore } from '@/stores/cart'
 import { useToastStore } from '@/stores/toast'
@@ -23,6 +23,7 @@ const router = useRouter()
 const videoRef = ref(null)
 const isVideoLoaded = ref(false)
 const isHovered = ref(false)
+const isInstantBuying = ref(false)
 
 const isSaved = computed(() => wishlistStore.hasItem(props.product.id))
 
@@ -67,6 +68,27 @@ const handleQuickAction = (e) => {
         cartStore.openDrawer()
       }
     })
+  }
+}
+
+const handleInstantBuy = async (e) => {
+  e.preventDefault()
+  e.stopPropagation()
+
+  if (props.product.has_variants) {
+    router.push(`/products/${props.product.slug}`)
+    return
+  }
+
+  isInstantBuying.value = true
+  try {
+    const success = await cartStore.addItem(props.product, null, 1)
+    if (success) {
+      toastStore.info('Proceeding directly to checkout...')
+      await router.push('/checkout')
+    }
+  } finally {
+    isInstantBuying.value = false
   }
 }
 
@@ -174,16 +196,29 @@ const secondImageUrl = computed(() => {
         />
       </button>
 
-      <!-- Quick Action Pill Button on Hover (Bottom of image) -->
-      <div class="absolute inset-x-3 bottom-3 z-10 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-200">
+      <!-- Quick Action Pill Buttons on Hover (Bottom of image) -->
+      <div class="absolute inset-x-2.5 bottom-2.5 z-10 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-200 flex items-center gap-1.5">
         <button
           type="button"
           @click="handleQuickAction"
-          class="w-full py-2.5 px-4 rounded-pill bg-white/95 backdrop-blur-md text-ink text-xs font-semibold shadow-md border border-line hover:bg-brand hover:text-white transition flex items-center justify-center gap-2"
+          class="flex-1 py-2 px-2.5 rounded-pill bg-white/95 backdrop-blur-md text-ink text-[11px] font-semibold shadow-md border border-line hover:bg-surface transition flex items-center justify-center gap-1"
+          :title="product.has_variants ? 'Choose Options' : 'Add to Bag'"
         >
-          <ShoppingBag v-if="!product.has_variants" class="w-3.5 h-3.5" />
-          <ArrowRight v-else class="w-3.5 h-3.5" />
-          <span>{{ product.has_variants ? 'Choose Options' : 'Quick Add' }}</span>
+          <ShoppingBag v-if="!product.has_variants" class="w-3 h-3" />
+          <ArrowRight v-else class="w-3 h-3" />
+          <span class="truncate">{{ product.has_variants ? 'Options' : 'Add' }}</span>
+        </button>
+
+        <button
+          type="button"
+          @click="handleInstantBuy"
+          :disabled="isInstantBuying"
+          class="py-2 px-3 rounded-pill bg-brand text-white text-[11px] font-bold shadow-md hover:opacity-90 transition flex items-center justify-center gap-1 flex-shrink-0 disabled:opacity-60"
+          title="Instant Checkout • Buy Now"
+        >
+          <Loader2 v-if="isInstantBuying" class="w-3 h-3 animate-spin" />
+          <Zap v-else class="w-3 h-3 text-amber-300 fill-amber-300" />
+          <span>Buy</span>
         </button>
       </div>
     </div>

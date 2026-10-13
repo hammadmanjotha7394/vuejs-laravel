@@ -18,6 +18,7 @@ import {
   Minus,
   Loader2,
   ArrowRight,
+  Zap,
 } from 'lucide-vue-next'
 
 import { useCartStore } from '@/stores/cart'
@@ -286,6 +287,23 @@ const handleAddToCart = async () => {
     }
   } finally {
     isAddingToCart.value = false
+  }
+}
+
+// Instant Checkout / Buy Now
+const isInstantCheckingOut = ref(false)
+const handleInstantCheckout = async () => {
+  if (!inStock.value || !product.value || isInstantCheckingOut.value) return
+
+  isInstantCheckingOut.value = true
+  try {
+    const success = await cartStore.addItem(product.value, currentVariant.value, quantity.value)
+    if (success) {
+      toastStore.info('Proceeding directly to checkout...')
+      await router.push('/checkout')
+    }
+  } finally {
+    isInstantCheckingOut.value = false
   }
 }
 
@@ -761,12 +779,12 @@ useHead({
               <button
                 type="button"
                 @click="handleAddToCart"
-                :disabled="!inStock || isAddingToCart"
-                class="flex-1 py-3 px-6 rounded-pill bg-brand text-white text-xs sm:text-sm font-semibold hover:opacity-90 transition flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="!inStock || isAddingToCart || isInstantCheckingOut"
+                class="flex-1 py-3 px-5 rounded-pill border border-line bg-white hover:bg-surface text-ink text-xs sm:text-sm font-semibold transition flex items-center justify-center gap-2 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Loader2 v-if="isAddingToCart" class="w-4 h-4 animate-spin" />
                 <ShoppingBag v-else class="w-4 h-4" />
-                <span>{{ inStock ? `Add to Cart • $${(currentPrice * quantity).toFixed(2)}` : 'Sold Out' }}</span>
+                <span>{{ inStock ? 'Add to Bag' : 'Sold Out' }}</span>
               </button>
 
               <!-- Wishlist Heart Button -->
@@ -794,6 +812,19 @@ useHead({
                 <Share2 class="w-4 h-4" />
               </button>
             </div>
+
+            <!-- Instant Checkout / Buy Now Button -->
+            <button
+              v-if="inStock"
+              type="button"
+              @click="handleInstantCheckout"
+              :disabled="isInstantCheckingOut || isAddingToCart"
+              class="w-full py-3.5 px-6 rounded-pill bg-brand hover:opacity-90 text-white text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed group"
+            >
+              <Loader2 v-if="isInstantCheckingOut" class="w-4 h-4 animate-spin" />
+              <Zap v-else class="w-4 h-4 text-amber-300 fill-amber-300 transition-transform group-hover:scale-110" />
+              <span>Instant Checkout • Buy Now (${{ (currentPrice * quantity).toFixed(2) }})</span>
+            </button>
 
             <!-- Back-in-Stock Notify Me Box (shown when out of stock) -->
             <div
@@ -928,8 +959,10 @@ useHead({
       :current-price="currentPrice"
       :in-stock="inStock"
       :is-adding="isAddingToCart"
+      :is-instant-checking-out="isInstantCheckingOut"
       :visible="showMobileStickyBar"
       @add-to-cart="handleAddToCart"
+      @instant-checkout="handleInstantCheckout"
     />
   </div>
 </template>
