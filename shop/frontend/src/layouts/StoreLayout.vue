@@ -14,6 +14,7 @@ import SearchOverlay from '@/components/store/SearchOverlay.vue'
 import PopupManager from '@/components/store/PopupManager.vue'
 import MaintenanceOverlay from '@/components/store/MaintenanceOverlay.vue'
 import CartDrawer from '@/components/store/CartDrawer.vue'
+import LiveChatWidget from '@/components/store/LiveChatWidget.vue'
 
 const settingsStore = useSettingsStore()
 const menuStore = useMenuStore()
@@ -94,6 +95,9 @@ onMounted(() => {
 
     <!-- Slide-in Mini Cart Drawer -->
     <CartDrawer />
+
+    <!-- Visitor Live Chat Floating Widget -->
+    <LiveChatWidget />
 
     <!-- Global Floating Toast Notification Stack -->
     <ToastContainer />

@@ -16,17 +16,21 @@ class ChatConversation extends Model
         'user_id',
         'visitor_name',
         'visitor_email',
+        'current_page',
         'status',
         'assigned_admin_id',
         'last_message_at',
+        'visitor_last_seen_at',
         'unread_admin_count',
         'unread_visitor_count',
+        'internal_notes',
     ];
 
     protected function casts(): array
     {
         return [
             'last_message_at' => 'datetime',
+            'visitor_last_seen_at' => 'datetime',
             'unread_admin_count' => 'integer',
             'unread_visitor_count' => 'integer',
         ];

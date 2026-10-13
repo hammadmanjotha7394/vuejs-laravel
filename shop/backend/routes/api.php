@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\ChatController as AdminChatController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FinanceController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CartController;
+use App\Http\Controllers\Api\ChatController as PublicChatController;
 use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\CustomerAccountController;
 use App\Http\Controllers\Api\PublicCategoryController;
@@ -60,6 +62,12 @@ Route::get('/pages', [PublicMarketingController::class, 'pages']);
 Route::get('/pages/{slug}', [PublicMarketingController::class, 'pageShow']);
 Route::get('/reviews/featured', [PublicMarketingController::class, 'featuredReviews']);
 Route::post('/newsletter/subscribe', [PublicMarketingController::class, 'subscribe']);
+
+// Live Chat Visitor Endpoints (Gentle Polling without WebSockets)
+Route::get('/chat/messages', [PublicChatController::class, 'index'])->middleware('throttle:90,1');
+Route::post('/chat/messages', [PublicChatController::class, 'store'])->middleware('throttle:30,1');
+Route::post('/chat/upload-attachment', [PublicChatController::class, 'uploadAttachment'])->middleware('throttle:15,1');
+Route::post('/chat/merge', [PublicChatController::class, 'merge']);
 
 // Storefront Cart Operations (Server is source of truth for price & inventory)
 Route::get('/cart', [CartController::class, 'index']);
@@ -238,5 +246,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/reviews/{review}/status', [ReviewController::class, 'updateStatus'])->middleware('permission:reviews.manage');
         Route::post('/reviews/{review}/reply', [ReviewController::class, 'reply'])->middleware('permission:reviews.manage');
         Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->middleware('permission:reviews.manage');
+
+        // Live Chat Inbox (Staff Conversation Management, Visitor Context & Canned Responses)
+        Route::get('/chat/conversations', [AdminChatController::class, 'index'])->middleware('permission:chat.manage');
+        Route::get('/chat/conversations/{conversation}', [AdminChatController::class, 'show'])->middleware('permission:chat.manage');
+        Route::post('/chat/conversations/{conversation}/messages', [AdminChatController::class, 'sendMessage'])->middleware('permission:chat.manage');
+        Route::patch('/chat/conversations/{conversation}', [AdminChatController::class, 'update'])->middleware('permission:chat.manage');
+        Route::get('/chat/canned-responses', [AdminChatController::class, 'cannedResponses'])->middleware('permission:chat.manage');
+        Route::put('/chat/canned-responses', [AdminChatController::class, 'updateCannedResponses'])->middleware('permission:chat.manage');
+        Route::post('/chat/upload-attachment', [AdminChatController::class, 'uploadAttachment'])->middleware('permission:chat.manage');
     });
 });

@@ -106,6 +106,12 @@ class SettingService
         'low_stock_email' => 'store',
         'promo_banners' => 'marketing',
         'trust_points' => 'marketing',
+
+        // Live Chat
+        'chat_canned_responses' => 'chat',
+        'chat_greeting' => 'chat',
+        'chat_offline_message' => 'chat',
+        'chat_online_default' => 'chat',
     ];
 
     /**

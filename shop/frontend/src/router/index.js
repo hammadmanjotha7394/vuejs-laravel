@@ -249,12 +249,8 @@ const routes = [
       {
         path: 'chat',
         name: 'admin.chat',
-        component: () => import('@/views/admin/AdminModulePlaceholderView.vue'),
-        meta: {
-          permission: 'chat.manage',
-          title: 'Live Chat Inbox',
-          description: 'Respond to real-time customer inquiries, view visitor cart context, and use canned replies.',
-        },
+        component: () => import('@/views/admin/ChatView.vue'),
+        meta: { permission: 'chat.manage' },
       },
       {
         path: 'marketing',
