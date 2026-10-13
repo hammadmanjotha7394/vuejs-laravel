@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\MenuController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserController;
@@ -48,6 +49,7 @@ Route::get('/products/{slug}', [PublicProductController::class, 'show']);
 Route::get('/search/suggest', [PublicProductController::class, 'suggest']);
 Route::get('/catalog/filters', [PublicProductController::class, 'filters']);
 Route::post('/products/{id}/reviews', [PublicProductController::class, 'storeReview']);
+Route::post('/reviews/upload-photo', [PublicProductController::class, 'uploadReviewPhoto']);
 Route::post('/reviews/{id}/helpful', [PublicProductController::class, 'voteHelpful']);
 
 // Public Marketing, CMS Pages & Newsletter
@@ -226,5 +228,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/pages/{page}', [PageController::class, 'show'])->middleware('permission:pages.manage');
         Route::put('/pages/{page}', [PageController::class, 'update'])->middleware('permission:pages.manage');
         Route::delete('/pages/{page}', [PageController::class, 'destroy'])->middleware('permission:pages.manage');
+
+        // Product Reviews Management (Moderation, Custom Admin Reviews, Replies & CSV Import)
+        Route::get('/reviews', [ReviewController::class, 'index'])->middleware('permission:reviews.manage');
+        Route::post('/reviews', [ReviewController::class, 'store'])->middleware('permission:reviews.manage');
+        Route::post('/reviews/import-csv', [ReviewController::class, 'importCsv'])->middleware('permission:reviews.manage');
+        Route::post('/reviews/upload-photo', [ReviewController::class, 'uploadPhoto'])->middleware('permission:reviews.manage');
+        Route::put('/reviews/{review}', [ReviewController::class, 'update'])->middleware('permission:reviews.manage');
+        Route::patch('/reviews/{review}/status', [ReviewController::class, 'updateStatus'])->middleware('permission:reviews.manage');
+        Route::post('/reviews/{review}/reply', [ReviewController::class, 'reply'])->middleware('permission:reviews.manage');
+        Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->middleware('permission:reviews.manage');
     });
 });

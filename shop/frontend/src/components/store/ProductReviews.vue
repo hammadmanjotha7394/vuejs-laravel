@@ -9,9 +9,11 @@ import {
   X,
   Loader2,
   ChevronDown,
+  Upload,
 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
+import { useSettingsStore } from '@/stores/settings'
 
 const props = defineProps({
   productId: {
@@ -34,11 +36,13 @@ const props = defineProps({
 
 const authStore = useAuthStore()
 const toastStore = useToastStore()
+const settingsStore = useSettingsStore()
 
 const reviewsList = ref([...props.initialReviews])
 const sortOption = ref('newest')
 const isModalOpen = ref(false)
 const isSubmitting = ref(false)
+const uploadingPhoto = ref(false)
 const votedHelpful = ref(new Set())
 
 // Review form state
@@ -47,6 +51,7 @@ const form = ref({
   title: '',
   body: '',
   author_name: authStore.user?.name || '',
+  photos: [],
 })
 
 // Star rating hover effect in form
@@ -89,14 +94,53 @@ const breakdownPercentages = computed(() => {
   }
 })
 
+const getInitials = (name, avatar) => {
+  if (avatar && avatar.length <= 3 && !avatar.startsWith('http') && !avatar.startsWith('/')) {
+    return avatar.toUpperCase()
+  }
+  return String(name || 'C')
+    .split(' ')
+    .map((p) => p[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+}
+
 const openReviewModal = () => {
   form.value = {
     rating: 5,
     title: '',
     body: '',
     author_name: authStore.user?.name || '',
+    photos: [],
   }
   isModalOpen.value = true
+}
+
+const handleCustomerPhotoUpload = async (e) => {
+  const file = e.target.files?.[0]
+  if (!file) return
+  if (form.value.photos.length >= 4) {
+    toastStore.error('Maximum 4 photos per review.')
+    return
+  }
+
+  uploadingPhoto.value = true
+  try {
+    const fd = new FormData()
+    fd.append('image', file)
+    const res = await axios.post('/api/reviews/upload-photo', fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    if (res.data.url) {
+      form.value.photos.push(res.data.url)
+    }
+  } catch (err) {
+    toastStore.error(err.response?.data?.message || 'Failed to upload photo.')
+  } finally {
+    uploadingPhoto.value = false
+    e.target.value = ''
+  }
 }
 
 const submitReview = async () => {
@@ -109,6 +153,7 @@ const submitReview = async () => {
       title: form.value.title.trim(),
       body: form.value.body.trim(),
       author_name: form.value.author_name.trim() || undefined,
+      photos: form.value.photos,
     })
 
     toastStore.success(res.data.message || 'Review submitted successfully!')
@@ -254,16 +299,56 @@ const voteHelpful = async (review) => {
         </div>
 
         <!-- Title & Body -->
-        <h4 class="text-sm font-bold text-ink">
+        <h4 v-if="rev.title" class="text-sm font-bold text-ink">
           {{ rev.title }}
         </h4>
         <p class="text-xs sm:text-sm text-ink-muted leading-relaxed whitespace-pre-line">
           {{ rev.body }}
         </p>
 
-        <!-- Bottom row: Author + Verified Badge + Helpful Vote -->
+        <!-- Optional Customer / Reviewer Photos -->
+        <div
+          v-if="Array.isArray(rev.photos) && rev.photos.length > 0"
+          class="flex flex-wrap gap-2.5 pt-1"
+        >
+          <img
+            v-for="(photoUrl, pIdx) in rev.photos"
+            :key="pIdx"
+            :src="photoUrl"
+            alt="Customer review photo"
+            class="w-20 h-20 rounded-xl object-cover border border-line"
+            loading="lazy"
+          />
+        </div>
+
+        <!-- Optional Public Store Reply -->
+        <div
+          v-if="rev.admin_reply"
+          class="mt-3 p-4 rounded-xl bg-surface/80 border-l-4 border-brand text-xs space-y-1"
+        >
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-ink">Response from {{ settingsStore.siteName || 'Our Studio' }}</span>
+            <span v-if="rev.admin_replied_at" class="text-[10px] text-ink-muted">{{ rev.admin_replied_at }}</span>
+          </div>
+          <p class="text-ink-muted leading-relaxed">{{ rev.admin_reply }}</p>
+        </div>
+
+        <!-- Bottom row: Avatar/Initials + Author + Verified Badge + Helpful Vote -->
         <div class="pt-3 border-t border-line/40 flex items-center justify-between">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2.5">
+            <img
+              v-if="rev.author_avatar && (rev.author_avatar.startsWith('http') || rev.author_avatar.startsWith('/'))"
+              :src="rev.author_avatar"
+              :alt="rev.author_name"
+              class="w-7 h-7 rounded-full object-cover border border-line"
+            />
+            <div
+              v-else
+              class="w-7 h-7 rounded-full bg-brand/10 text-brand font-bold text-[10px] flex items-center justify-center border border-brand/20"
+            >
+              {{ getInitials(rev.author_name, rev.author_avatar) }}
+            </div>
+
             <span class="text-xs font-semibold text-ink">{{ rev.author_name }}</span>
             <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-success bg-emerald-50 px-2 py-0.5 rounded-pill border border-emerald-200">
               <CheckCircle2 class="w-3 h-3" />
@@ -306,7 +391,7 @@ const voteHelpful = async (review) => {
         aria-label="Write a Review"
         @click.self="isModalOpen = false"
       >
-        <div class="w-full max-w-lg bg-white rounded-card shadow-2xl border border-line p-6 sm:p-8 space-y-5" @click.stop>
+        <div class="w-full max-w-lg bg-white rounded-card shadow-2xl border border-line p-6 sm:p-8 space-y-5 max-h-[90vh] overflow-y-auto" @click.stop>
           <div class="flex items-center justify-between border-b border-line pb-3">
             <h3 class="font-bold text-base text-ink">Write a Customer Review</h3>
             <button
@@ -374,6 +459,36 @@ const voteHelpful = async (review) => {
                 placeholder="Share your experience regarding texture, sizing, durability, and craftsmanship..."
                 class="w-full px-3.5 py-2.5 bg-surface border border-line rounded-input text-xs text-ink focus:outline-none focus:border-brand"
               ></textarea>
+            </div>
+
+            <!-- Optional Photos Upload -->
+            <div>
+              <label class="block text-xs font-semibold text-ink mb-1.5">Photos (Optional, up to 4)</label>
+              <div class="flex flex-wrap items-center gap-2.5">
+                <div
+                  v-for="(pUrl, pIdx) in form.photos"
+                  :key="pIdx"
+                  class="relative w-14 h-14 rounded-xl overflow-hidden border border-line"
+                >
+                  <img :src="pUrl" class="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    @click="form.photos.splice(pIdx, 1)"
+                    class="absolute top-0.5 right-0.5 bg-black/70 text-white rounded-full p-0.5"
+                  >
+                    <X class="w-3 h-3" />
+                  </button>
+                </div>
+
+                <label
+                  v-if="form.photos.length < 4"
+                  class="cursor-pointer px-3.5 py-2 rounded-xl border border-line bg-surface hover:bg-white text-xs font-medium text-ink inline-flex items-center gap-1.5"
+                >
+                  <Upload class="w-3.5 h-3.5 text-brand" />
+                  <span>{{ uploadingPhoto ? 'Uploading...' : 'Add Photo' }}</span>
+                  <input type="file" class="hidden" accept="image/*" @change="handleCustomerPhotoUpload" />
+                </label>
+              </div>
             </div>
 
             <div class="pt-2 flex justify-end gap-2">

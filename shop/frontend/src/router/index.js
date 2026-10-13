@@ -233,12 +233,8 @@ const routes = [
       {
         path: 'reviews',
         name: 'admin.reviews',
-        component: () => import('@/views/admin/AdminModulePlaceholderView.vue'),
-        meta: {
-          permission: 'reviews.manage',
-          title: 'Product Reviews',
-          description: 'Approve or reject customer reviews, create custom storefront reviews, and import via CSV.',
-        },
+        component: () => import('@/views/admin/ReviewsView.vue'),
+        meta: { permission: 'reviews.manage' },
       },
       {
         path: 'coupons',

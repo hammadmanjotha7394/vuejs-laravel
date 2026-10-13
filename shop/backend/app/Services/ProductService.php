@@ -9,6 +9,7 @@ use App\Models\ProductDetailsSection;
 use App\Models\ProductImage;
 use App\Models\ProductOptionValue;
 use App\Models\ProductSpec;
+use App\Models\Review;
 use App\Models\Tag;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
@@ -277,15 +278,13 @@ class ProductService
             return null;
         }
 
-        // Compute rating summary
+        // Compute or read cached rating summary
         $reviews = $product->approvedReviews;
-        $reviewCount = $reviews->count();
-        $averageRating = $reviewCount > 0 ? round($reviews->avg('rating'), 1) : 0.0;
-
-        $ratingBreakdown = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
-        foreach ($reviews as $rev) {
-            $ratingBreakdown[$rev->rating] = ($ratingBreakdown[$rev->rating] ?? 0) + 1;
-        }
+        $ratingSummary = Cache::remember(
+            "product_rating_summary_{$product->id}",
+            3600,
+            fn () => Review::recalculateProductRating($product->id)
+        );
 
         // Hydrate related products
         $relatedProducts = Product::where('category_id', $product->category_id)
@@ -390,20 +389,8 @@ class ProductService
                     'value' => $sp->value,
                     'sort_order' => $sp->sort_order,
                 ]),
-                'rating_summary' => [
-                    'average' => $averageRating,
-                    'count' => $reviewCount,
-                    'breakdown' => $ratingBreakdown,
-                ],
-                'reviews' => $reviews->map(fn ($r) => [
-                    'id' => $r->id,
-                    'author_name' => $r->author_name,
-                    'rating' => (int) $r->rating,
-                    'title' => $r->title,
-                    'body' => $r->body,
-                    'review_date' => $r->review_date ? $r->review_date->format('M d, Y') : ($r->created_at ? $r->created_at->format('M d, Y') : null),
-                    'helpful_count' => (int) $r->helpful_count,
-                ]),
+                'rating_summary' => $ratingSummary,
+                'reviews' => $reviews->map(fn (Review $r) => Review::formatForPublic($r)),
             ],
             'related_products' => $relatedProducts,
         ];

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Review;
+use App\Services\ImageService;
 use App\Services\ProductService;
 use App\Services\SettingService;
 use Illuminate\Http\JsonResponse;
@@ -67,7 +68,7 @@ class PublicProductController extends Controller
     }
 
     /**
-     * Submit a customer review for a product.
+     * Submit a customer review for a product (with optional photos).
      */
     public function storeReview(Request $request, int|string $id): JsonResponse
     {
@@ -78,10 +79,12 @@ class PublicProductController extends Controller
             'title' => 'required|string|max:150',
             'body' => 'required|string|max:2000',
             'author_name' => 'nullable|string|max:100',
+            'photos' => 'nullable|array|max:4',
+            'photos.*' => 'string|max:500',
         ]);
 
-        $user = auth('sanctum')->user();
-        $authorName = $validated['author_name'] ?: ($user ? $user->name : 'Verified Customer');
+        $user = $request->user();
+        $authorName = strip_tags(($validated['author_name'] ?? null) ?: ($user ? $user->name : 'Verified Customer'));
 
         $moderationOn = (bool) SettingService::get('review_moderation', false);
 
@@ -90,28 +93,42 @@ class PublicProductController extends Controller
             'user_id' => $user?->id,
             'author_name' => $authorName,
             'rating' => $validated['rating'],
-            'title' => $validated['title'],
-            'body' => $validated['body'],
+            'title' => strip_tags($validated['title']),
+            'body' => strip_tags($validated['body']),
+            'photos_json' => $validated['photos'] ?? [],
             'is_approved' => ! $moderationOn,
             'is_admin_created' => false,
             'review_date' => now(),
             'helpful_count' => 0,
         ]);
 
+        $ratingSummary = Review::recalculateProductRating($product->id);
+
         return response()->json([
             'message' => $moderationOn
-                ? 'Thank you! Your review has been submitted and will appear shortly.'
+                ? 'Thank you! Your review has been submitted and is awaiting moderation.'
                 : 'Thank you! Your review has been published.',
-            'data' => [
-                'id' => $review->id,
-                'author_name' => $review->author_name,
-                'rating' => (int) $review->rating,
-                'title' => $review->title,
-                'body' => $review->body,
-                'review_date' => $review->review_date ? $review->review_date->format('M d, Y') : 'Just now',
-                'helpful_count' => 0,
-            ],
+            'data' => $review->is_approved ? Review::formatForPublic($review) : null,
+            'is_approved' => (bool) $review->is_approved,
+            'rating_summary' => $ratingSummary,
         ], 201);
+    }
+
+    /**
+     * Upload an optional photo for a customer review.
+     */
+    public function uploadReviewPhoto(Request $request): JsonResponse
+    {
+        $request->validate([
+            'image' => 'required|file|mimes:jpg,jpeg,png,webp|max:4096',
+        ]);
+
+        $processed = ImageService::processProductImage($request->file('image'), 'reviews');
+
+        return response()->json([
+            'url' => $processed['medium_url'] ?: $processed['large_url'],
+            'thumb_url' => $processed['thumb_url'],
+        ]);
     }
 
     /**
