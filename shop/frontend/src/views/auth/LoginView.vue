@@ -1,12 +1,14 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter, useRoute, RouterLink } from 'vue-router'
-import { Eye, EyeOff, Lock, Mail, AlertCircle, ArrowRight, ShieldCheck } from 'lucide-vue-next'
+import { Eye, EyeOff, Lock, Mail, AlertCircle, ArrowRight, ShieldCheck, Zap, ChevronDown } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
+import { useSettingsStore } from '@/stores/settings'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const settingsStore = useSettingsStore()
 
 const form = reactive({
   email: '',
@@ -15,20 +17,28 @@ const form = reactive({
 })
 
 const showPassword = ref(false)
+const showDemoRoles = ref(true)
 const errorMessage = ref('')
 const isSubmitting = ref(false)
 
 const quickAccounts = [
-  { label: 'Super Admin', email: 'admin@shop.test', role: 'Full control' },
-  { label: 'Product Lead', email: 'product@shop.test', role: 'Products only' },
-  { label: 'Order Manager', email: 'order@shop.test', role: 'Orders only' },
-  { label: 'Customer', email: 'customer@shop.test', role: 'Storefront' },
+  { label: 'Super Admin', email: 'admin@shop.test', role: 'Full control & settings', badge: 'Admin' },
+  { label: 'Product Lead', email: 'product@shop.test', role: 'Catalog, menus & pages', badge: 'Staff' },
+  { label: 'Order Manager', email: 'order@shop.test', role: 'Orders & fulfillment', badge: 'Staff' },
+  { label: 'Support Agent', email: 'support@shop.test', role: 'Live chat & reviews', badge: 'Staff' },
+  { label: 'Finance Manager', email: 'finance@shop.test', role: 'Revenue & refunds', badge: 'Staff' },
+  { label: 'Customer', email: 'customer@shop.test', role: 'Storefront & orders', badge: 'Shopper' },
 ]
 
 const fillAccount = (email) => {
   form.email = email
   form.password = 'password123'
   errorMessage.value = ''
+}
+
+const quickLogin = async (email) => {
+  fillAccount(email)
+  await handleLogin()
 }
 
 const handleLogin = async () => {
@@ -46,10 +56,15 @@ const handleLogin = async () => {
       remember: form.remember,
     })
 
-    const redirectPath = route.query.redirect || (authStore.isStaff ? '/admin' : '/')
+    const redirectPath = route.query.redirect || (authStore.isStaff ? '/admin' : '/account')
     router.push(redirectPath)
   } catch (err) {
-    errorMessage.value = err.response?.data?.message || 'Invalid email or password.'
+    const errors = err.response?.data?.errors
+    if (errors) {
+      errorMessage.value = Object.values(errors).flat().join(' ')
+    } else {
+      errorMessage.value = err.response?.data?.message || 'Invalid email or password.'
+    }
   } finally {
     isSubmitting.value = false
   }
@@ -57,25 +72,26 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-page flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+  <div class="bg-surface/40 py-12 sm:py-16 px-4 sm:px-6 lg:px-8">
     <div class="sm:mx-auto sm:w-full sm:max-w-md text-center">
-      <RouterLink to="/" class="inline-flex items-center gap-2 text-2xl font-bold tracking-tight text-ink">
-        <span class="w-9 h-9 rounded-full bg-brand text-white flex items-center justify-center text-sm font-semibold">B</span>
-        <span>Boutique</span>
-      </RouterLink>
-      <h2 class="mt-4 text-2xl font-semibold tracking-tight text-ink">Sign in to your account</h2>
-      <p class="mt-1 text-sm text-ink-muted">
-        Or
-        <RouterLink to="/register" class="font-medium text-brand hover:underline">
-          create a new account
+      <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-ink">
+        Sign in to {{ settingsStore.siteName }}
+      </h1>
+      <p class="mt-1.5 text-xs sm:text-sm text-ink-muted">
+        Don’t have an account yet?
+        <RouterLink to="/register" class="font-semibold text-brand hover:underline">
+          Create a free account
         </RouterLink>
       </p>
     </div>
 
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-      <div class="bg-surface border border-line py-8 px-6 shadow-soft rounded-card sm:px-10">
+      <div class="bg-white border border-line py-8 px-6 shadow-soft rounded-card sm:px-10">
         <!-- Error Alert -->
-        <div v-if="errorMessage" class="mb-5 p-3 rounded-input bg-red-50 border border-red-200 text-error flex items-start gap-2.5 text-sm">
+        <div
+          v-if="errorMessage"
+          class="mb-5 p-3 rounded-input bg-red-50 border border-red-200 text-error flex items-start gap-2.5 text-xs sm:text-sm"
+        >
           <AlertCircle class="w-4 h-4 flex-shrink-0 mt-0.5" />
           <span>{{ errorMessage }}</span>
         </div>
@@ -83,7 +99,9 @@ const handleLogin = async () => {
         <form class="space-y-5" @submit.prevent="handleLogin">
           <!-- Email Field -->
           <div>
-            <label for="email" class="block text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1.5">Email address</label>
+            <label for="email" class="block text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1.5">
+              Email address
+            </label>
             <div class="relative">
               <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-ink-muted">
                 <Mail class="w-4 h-4" />
@@ -103,7 +121,9 @@ const handleLogin = async () => {
           <!-- Password Field -->
           <div>
             <div class="flex items-center justify-between mb-1.5">
-              <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-ink-muted">Password</label>
+              <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-ink-muted">
+                Password
+              </label>
               <RouterLink to="/forgot-password" class="text-xs font-medium text-brand hover:underline">
                 Forgot password?
               </RouterLink>
@@ -125,7 +145,7 @@ const handleLogin = async () => {
                 type="button"
                 @click="showPassword = !showPassword"
                 class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-ink-muted hover:text-ink transition"
-                tabindex="-1"
+                :aria-label="showPassword ? 'Hide password' : 'Show password'"
               >
                 <EyeOff v-if="showPassword" class="w-4 h-4" />
                 <Eye v-else class="w-4 h-4" />
@@ -133,17 +153,20 @@ const handleLogin = async () => {
             </div>
           </div>
 
-          <!-- Remember Me -->
-          <div class="flex items-center">
-            <input
-              id="remember-me"
-              v-model="form.remember"
-              type="checkbox"
-              class="h-4 w-4 text-brand focus:ring-brand border-line rounded"
-            />
-            <label for="remember-me" class="ml-2 block text-xs text-ink-muted">
-              Remember me for 30 days
+          <!-- Remember Me & Track Order link -->
+          <div class="flex items-center justify-between">
+            <label for="remember-me" class="flex items-center cursor-pointer">
+              <input
+                id="remember-me"
+                v-model="form.remember"
+                type="checkbox"
+                class="h-4 w-4 text-brand focus:ring-brand border-line rounded"
+              />
+              <span class="ml-2 block text-xs text-ink-muted">Remember me for 30 days</span>
             </label>
+            <RouterLink to="/track-order" class="text-xs text-ink-muted hover:text-brand transition">
+              Guest order lookup
+            </RouterLink>
           </div>
 
           <!-- Submit Button -->
@@ -151,32 +174,63 @@ const handleLogin = async () => {
             <button
               type="submit"
               :disabled="isSubmitting"
-              class="w-full flex justify-center items-center gap-2 py-3 px-4 rounded-pill font-medium text-sm text-white bg-brand hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand transition disabled:opacity-50"
+              class="w-full flex justify-center items-center gap-2 py-3 px-4 rounded-pill font-semibold text-xs sm:text-sm text-white bg-brand hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand transition disabled:opacity-50"
             >
               <span v-if="isSubmitting" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-              <span v-else>Sign in</span>
+              <span v-else>Sign In</span>
               <ArrowRight v-if="!isSubmitting" class="w-4 h-4" />
             </button>
           </div>
         </form>
 
-        <!-- Quick Demo Switcher -->
+        <!-- Role & Demo Quick-Login Switcher -->
         <div class="mt-8 pt-6 border-t border-line">
-          <div class="flex items-center gap-1.5 text-xs font-semibold text-ink-muted uppercase tracking-wider mb-3">
-            <ShieldCheck class="w-3.5 h-3.5 text-brand" />
-            <span>Test Role Accounts (Click to Fill)</span>
-          </div>
-          <div class="grid grid-cols-2 gap-2 text-xs">
-            <button
+          <button
+            type="button"
+            @click="showDemoRoles = !showDemoRoles"
+            class="w-full flex items-center justify-between text-xs font-semibold text-ink-muted uppercase tracking-wider mb-3 hover:text-ink transition"
+          >
+            <span class="flex items-center gap-1.5">
+              <ShieldCheck class="w-3.5 h-3.5 text-brand" />
+              <span>Role Access & Quick Sign-In (6 Roles)</span>
+            </span>
+            <ChevronDown class="w-4 h-4 transition-transform" :class="{ 'rotate-180': showDemoRoles }" />
+          </button>
+
+          <div v-if="showDemoRoles" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            <div
               v-for="acc in quickAccounts"
               :key="acc.email"
-              type="button"
-              @click="fillAccount(acc.email)"
-              class="text-left p-2.5 rounded-input border border-line bg-page hover:border-brand/40 hover:bg-brand/5 transition"
+              class="p-2.5 rounded-input border border-line bg-surface/60 hover:border-brand/40 transition flex flex-col justify-between gap-2"
             >
-              <div class="font-semibold text-ink">{{ acc.label }}</div>
-              <div class="text-[11px] text-ink-muted truncate">{{ acc.role }}</div>
-            </button>
+              <div @click="fillAccount(acc.email)" class="cursor-pointer">
+                <div class="flex items-center justify-between gap-1">
+                  <span class="font-semibold text-ink">{{ acc.label }}</span>
+                  <span class="text-[10px] font-medium px-1.5 py-0.5 rounded bg-white border border-line text-ink-muted">
+                    {{ acc.badge }}
+                  </span>
+                </div>
+                <div class="text-[11px] text-ink-muted truncate mt-0.5">{{ acc.role }}</div>
+              </div>
+              <div class="flex items-center gap-1.5 pt-1 border-t border-line/60">
+                <button
+                  type="button"
+                  @click="fillAccount(acc.email)"
+                  class="flex-1 py-1 px-2 rounded bg-white border border-line text-[11px] font-medium text-ink hover:border-brand transition"
+                >
+                  Fill
+                </button>
+                <button
+                  type="button"
+                  :disabled="isSubmitting"
+                  @click="quickLogin(acc.email)"
+                  class="flex-1 py-1 px-2 rounded bg-brand text-white text-[11px] font-semibold hover:opacity-90 transition inline-flex items-center justify-center gap-1"
+                >
+                  <Zap class="w-3 h-3" />
+                  <span>Login</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -72,6 +72,47 @@ const routes = [
         component: PageView,
       },
       {
+        path: 'pages/:slug',
+        name: 'pages.show',
+        component: PageView,
+      },
+      {
+        path: 'about',
+        name: 'page.about',
+        component: PageView,
+        meta: { pageSlug: 'about' },
+      },
+      {
+        path: 'faq',
+        name: 'page.faq',
+        component: PageView,
+        meta: { pageSlug: 'faq' },
+      },
+      {
+        path: 'shipping',
+        name: 'page.shipping',
+        component: PageView,
+        meta: { pageSlug: 'shipping' },
+      },
+      {
+        path: 'returns',
+        name: 'page.returns',
+        component: PageView,
+        meta: { pageSlug: 'returns' },
+      },
+      {
+        path: 'privacy',
+        name: 'page.privacy',
+        component: PageView,
+        meta: { pageSlug: 'privacy' },
+      },
+      {
+        path: 'terms',
+        name: 'page.terms',
+        component: PageView,
+        meta: { pageSlug: 'terms' },
+      },
+      {
         path: 'track-order',
         name: 'order.track',
         component: () => import('@/views/store/TrackOrderView.vue'),
@@ -80,6 +121,29 @@ const routes = [
         path: 'contact',
         name: 'contact',
         component: () => import('@/views/store/ContactView.vue'),
+      },
+      {
+        path: 'login',
+        name: 'login',
+        component: LoginView,
+        meta: { guestOnly: true },
+      },
+      {
+        path: 'register',
+        name: 'register',
+        component: RegisterView,
+        meta: { guestOnly: true },
+      },
+      {
+        path: 'forgot-password',
+        name: 'forgot-password',
+        component: () => import('@/views/auth/ForgotPasswordView.vue'),
+        meta: { guestOnly: true },
+      },
+      {
+        path: '403',
+        name: 'forbidden',
+        component: ForbiddenView,
       },
       {
         path: 'cart',
@@ -156,25 +220,6 @@ const routes = [
         component: NotFoundView,
       },
     ],
-  },
-
-  // Standalone Auth & System Routes
-  {
-    path: '/login',
-    name: 'login',
-    component: LoginView,
-    meta: { guestOnly: true },
-  },
-  {
-    path: '/register',
-    name: 'register',
-    component: RegisterView,
-    meta: { guestOnly: true },
-  },
-  {
-    path: '/403',
-    name: 'forbidden',
-    component: ForbiddenView,
   },
 
   // Admin Dashboard Routes (Lazy-loaded chunks so they never slow down the storefront)

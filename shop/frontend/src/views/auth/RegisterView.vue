@@ -3,9 +3,11 @@ import { ref, reactive } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { Eye, EyeOff, Lock, Mail, User as UserIcon, AlertCircle, ArrowRight } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
+import { useSettingsStore } from '@/stores/settings'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const settingsStore = useSettingsStore()
 
 const form = reactive({
   name: '',
@@ -42,7 +44,7 @@ const handleRegister = async () => {
       password_confirmation: form.password_confirmation,
     })
 
-    router.push('/')
+    router.push('/account')
   } catch (err) {
     const errors = err.response?.data?.errors
     if (errors) {
@@ -57,25 +59,26 @@ const handleRegister = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-page flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+  <div class="bg-surface/40 py-12 sm:py-16 px-4 sm:px-6 lg:px-8">
     <div class="sm:mx-auto sm:w-full sm:max-w-md text-center">
-      <RouterLink to="/" class="inline-flex items-center gap-2 text-2xl font-bold tracking-tight text-ink">
-        <span class="w-9 h-9 rounded-full bg-brand text-white flex items-center justify-center text-sm font-semibold">B</span>
-        <span>Boutique</span>
-      </RouterLink>
-      <h2 class="mt-4 text-2xl font-semibold tracking-tight text-ink">Create an account</h2>
-      <p class="mt-1 text-sm text-ink-muted">
+      <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-ink">
+        Create your {{ settingsStore.siteName }} account
+      </h1>
+      <p class="mt-1.5 text-xs sm:text-sm text-ink-muted">
         Already have an account?
-        <RouterLink to="/login" class="font-medium text-brand hover:underline">
-          Sign in
+        <RouterLink to="/login" class="font-semibold text-brand hover:underline">
+          Sign in here
         </RouterLink>
       </p>
     </div>
 
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-      <div class="bg-surface border border-line py-8 px-6 shadow-soft rounded-card sm:px-10">
+      <div class="bg-white border border-line py-8 px-6 shadow-soft rounded-card sm:px-10">
         <!-- Error Alert -->
-        <div v-if="errorMessage" class="mb-5 p-3 rounded-input bg-red-50 border border-red-200 text-error flex items-start gap-2.5 text-sm">
+        <div
+          v-if="errorMessage"
+          class="mb-5 p-3 rounded-input bg-red-50 border border-red-200 text-error flex items-start gap-2.5 text-xs sm:text-sm"
+        >
           <AlertCircle class="w-4 h-4 flex-shrink-0 mt-0.5" />
           <span>{{ errorMessage }}</span>
         </div>
@@ -83,7 +86,9 @@ const handleRegister = async () => {
         <form class="space-y-4" @submit.prevent="handleRegister">
           <!-- Full Name -->
           <div>
-            <label for="name" class="block text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1.5">Full name</label>
+            <label for="name" class="block text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1.5">
+              Full name
+            </label>
             <div class="relative">
               <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-ink-muted">
                 <UserIcon class="w-4 h-4" />
@@ -101,7 +106,9 @@ const handleRegister = async () => {
 
           <!-- Email -->
           <div>
-            <label for="email" class="block text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1.5">Email address</label>
+            <label for="email" class="block text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1.5">
+              Email address
+            </label>
             <div class="relative">
               <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-ink-muted">
                 <Mail class="w-4 h-4" />
@@ -119,7 +126,9 @@ const handleRegister = async () => {
 
           <!-- Password -->
           <div>
-            <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1.5">Password (8+ chars)</label>
+            <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1.5">
+              Password (8+ characters)
+            </label>
             <div class="relative">
               <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-ink-muted">
                 <Lock class="w-4 h-4" />
@@ -136,7 +145,7 @@ const handleRegister = async () => {
                 type="button"
                 @click="showPassword = !showPassword"
                 class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-ink-muted hover:text-ink transition"
-                tabindex="-1"
+                :aria-label="showPassword ? 'Hide password' : 'Show password'"
               >
                 <EyeOff v-if="showPassword" class="w-4 h-4" />
                 <Eye v-else class="w-4 h-4" />
@@ -146,7 +155,9 @@ const handleRegister = async () => {
 
           <!-- Confirm Password -->
           <div>
-            <label for="password_confirmation" class="block text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1.5">Confirm password</label>
+            <label for="password_confirmation" class="block text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1.5">
+              Confirm password
+            </label>
             <div class="relative">
               <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-ink-muted">
                 <Lock class="w-4 h-4" />
@@ -167,10 +178,10 @@ const handleRegister = async () => {
             <button
               type="submit"
               :disabled="isSubmitting"
-              class="w-full flex justify-center items-center gap-2 py-3 px-4 rounded-pill font-medium text-sm text-white bg-brand hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand transition disabled:opacity-50"
+              class="w-full flex justify-center items-center gap-2 py-3 px-4 rounded-pill font-semibold text-xs sm:text-sm text-white bg-brand hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand transition disabled:opacity-50"
             >
               <span v-if="isSubmitting" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-              <span v-else>Create account</span>
+              <span v-else>Create Account</span>
               <ArrowRight v-if="!isSubmitting" class="w-4 h-4" />
             </button>
           </div>

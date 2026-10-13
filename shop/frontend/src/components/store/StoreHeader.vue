@@ -256,6 +256,14 @@ const mainMenuItems = computed(() => {
                   <span>My Orders</span>
                 </RouterLink>
 
+                <RouterLink
+                  to="/track-order"
+                  class="flex items-center gap-2 px-3.5 py-2 text-ink hover:bg-surface transition"
+                >
+                  <ArrowRight class="w-3.5 h-3.5 text-ink-muted" />
+                  <span>Track an Order</span>
+                </RouterLink>
+
                 <div class="border-t border-line mt-1 pt-1">
                   <button
                     type="button"
@@ -285,6 +293,20 @@ const mainMenuItems = computed(() => {
                 >
                   <span>Create Account</span>
                 </RouterLink>
+                <div class="border-t border-line mt-1 pt-1">
+                  <RouterLink
+                    to="/track-order"
+                    class="flex items-center justify-between px-3.5 py-2 text-ink-muted hover:text-ink hover:bg-surface transition"
+                  >
+                    <span>Track Guest Order</span>
+                  </RouterLink>
+                  <RouterLink
+                    to="/contact"
+                    class="flex items-center justify-between px-3.5 py-2 text-ink-muted hover:text-ink hover:bg-surface transition"
+                  >
+                    <span>Contact Studio</span>
+                  </RouterLink>
+                </div>
               </template>
             </div>
           </Transition>

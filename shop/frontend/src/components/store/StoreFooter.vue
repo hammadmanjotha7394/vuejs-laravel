@@ -199,12 +199,24 @@ const footerMenuItems = computed(() => {
                   <RouterLink to="/faq" class="hover:text-brand transition">FAQ</RouterLink>
                 </li>
                 <li>
-                  <RouterLink to="/shipping" class="hover:text-brand transition">Shipping & Returns</RouterLink>
+                  <RouterLink to="/shipping" class="hover:text-brand transition">Shipping & Delivery</RouterLink>
+                </li>
+                <li>
+                  <RouterLink to="/returns" class="hover:text-brand transition">Returns & Exchanges</RouterLink>
+                </li>
+                <li>
+                  <RouterLink to="/privacy" class="hover:text-brand transition">Privacy Policy</RouterLink>
                 </li>
                 <li>
                   <RouterLink to="/terms" class="hover:text-brand transition">Terms of Service</RouterLink>
                 </li>
               </template>
+              <li>
+                <RouterLink to="/track-order" class="hover:text-brand transition">Track Your Order</RouterLink>
+              </li>
+              <li>
+                <RouterLink to="/contact" class="hover:text-brand transition">Contact Us</RouterLink>
+              </li>
             </ul>
           </div>
         </div>
