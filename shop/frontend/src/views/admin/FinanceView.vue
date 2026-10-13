@@ -157,15 +157,16 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Error state / 403 response -->
-    <div v-if="errorMessage" class="bg-red-50 border border-red-200 rounded-card p-6 text-error">
+    <!-- Error state -->
+    <div v-if="errorMessage" class="bg-red-50 border border-red-200 rounded-card p-5 text-error flex items-start justify-between gap-3">
       <div class="flex items-start gap-3">
         <AlertCircle class="w-5 h-5 flex-shrink-0 mt-0.5" />
         <div>
-          <h2 class="text-sm font-semibold">Forbidden (403): Insufficient Permissions</h2>
+          <h2 class="text-sm font-semibold">Unable to Load Financial Report</h2>
           <p class="text-xs text-red-700 mt-1">{{ errorMessage }}</p>
         </div>
       </div>
+      <button type="button" @click="errorMessage = ''" class="text-xs underline shrink-0">Dismiss</button>
     </div>
 
     <!-- Loading skeleton -->

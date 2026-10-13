@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import apiClient, { getCsrfCookie } from '@/api/client'
+import apiClient, { getCsrfCookie, setAuthToken } from '@/api/client'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -40,6 +40,9 @@ export const useAuthStore = defineStore('auth', {
       try {
         await getCsrfCookie()
         const response = await apiClient.post('/login', credentials)
+        if (response.data.token) {
+          setAuthToken(response.data.token)
+        }
         this.setUser(response.data.user)
 
         // Merge guest cart & sync guest wishlist
@@ -60,6 +63,9 @@ export const useAuthStore = defineStore('auth', {
       try {
         await getCsrfCookie()
         const response = await apiClient.post('/register', userData)
+        if (response.data.token) {
+          setAuthToken(response.data.token)
+        }
         this.setUser(response.data.user)
 
         // Merge guest cart & sync guest wishlist
@@ -118,6 +124,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     clearUser() {
+      setAuthToken(null)
       this.user = null
       this.roles = []
       this.permissions = []

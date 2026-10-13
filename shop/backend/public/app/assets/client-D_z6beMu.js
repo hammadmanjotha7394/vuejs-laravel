@@ -1,1 +1,0 @@
-import{t as e}from"./axios-Bk_AF1Yc.js";var t=``.replace(/\/+$/,``),n=e.create({baseURL:`${t}/api`,withCredentials:!0,headers:{Accept:`application/json`,"X-Requested-With":`XMLHttpRequest`}}),r=()=>e.get(`${t}/sanctum/csrf-cookie`,{withCredentials:!0});export{r as n,n as t};

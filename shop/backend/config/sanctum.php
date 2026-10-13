@@ -18,14 +18,18 @@ return [
     |
     */
 
-    'stateful' => array_filter(array_merge(
+    'stateful' => array_values(array_unique(array_filter(array_merge(
         explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
             '%s%s',
-            'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1',
+            'localhost,localhost:3000,localhost:5173,127.0.0.1,127.0.0.1:8000,127.0.0.1:5173,::1,mistyrose-seal-239968.hostingersite.com',
             Sanctum::currentApplicationUrlWithPort(),
         ))),
-        [Sanctum::currentRequestHost()]
-    )),
+        [
+            Sanctum::currentRequestHost(),
+            $_SERVER['HTTP_HOST'] ?? null,
+            'mistyrose-seal-239968.hostingersite.com',
+        ]
+    )))),
 
     /*
     |--------------------------------------------------------------------------

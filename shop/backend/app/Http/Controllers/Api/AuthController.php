@@ -35,8 +35,11 @@ class AuthController extends Controller
             $request->session()->regenerate();
         }
 
+        $token = $user->createToken('spa-token')->plainTextToken;
+
         return response()->json([
             'message' => 'Account created successfully',
+            'token' => $token,
             'user' => $this->formatUser($user),
         ], 201);
     }
@@ -74,14 +77,24 @@ class AuthController extends Controller
         }
         $user->update(['last_login_at' => now()]);
 
+        $token = $user->createToken('spa-token')->plainTextToken;
+
         return response()->json([
             'message' => 'Signed in successfully',
+            'token' => $token,
             'user' => $this->formatUser($user),
         ]);
     }
 
     public function logout(Request $request): JsonResponse
     {
+        if ($request->user() && method_exists($request->user(), 'currentAccessToken')) {
+            $accessToken = $request->user()->currentAccessToken();
+            if ($accessToken && method_exists($accessToken, 'delete')) {
+                $accessToken->delete();
+            }
+        }
+
         Auth::guard('web')->logout();
 
         if ($request->hasSession()) {
