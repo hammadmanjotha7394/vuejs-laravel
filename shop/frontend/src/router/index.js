@@ -6,16 +6,6 @@ import LoginView from '@/views/auth/LoginView.vue'
 import RegisterView from '@/views/auth/RegisterView.vue'
 import ForbiddenView from '@/views/ForbiddenView.vue'
 import NotFoundView from '@/views/NotFoundView.vue'
-import AdminLayout from '@/layouts/AdminLayout.vue'
-import DashboardView from '@/views/admin/DashboardView.vue'
-import UsersView from '@/views/admin/UsersView.vue'
-import RolesView from '@/views/admin/RolesView.vue'
-import FinanceView from '@/views/admin/FinanceView.vue'
-import SettingsView from '@/views/admin/SettingsView.vue'
-import CategoriesView from '@/views/admin/CategoriesView.vue'
-import MenusView from '@/views/admin/MenusView.vue'
-import ProductsView from '@/views/admin/ProductsView.vue'
-import ProductFormView from '@/views/admin/ProductFormView.vue'
 
 import CatalogView from '@/views/store/CatalogView.vue'
 import ProductDetailView from '@/views/store/ProductDetailView.vue'
@@ -171,70 +161,169 @@ const routes = [
     component: ForbiddenView,
   },
 
-  // Admin Dashboard Routes
+  // Admin Dashboard Routes (Lazy-loaded chunks so they never slow down the storefront)
   {
     path: '/admin',
-    component: AdminLayout,
+    component: () => import('@/layouts/AdminLayout.vue'),
     meta: { requiresAuth: true, requiresStaff: true },
     children: [
       {
         path: '',
         name: 'admin.dashboard',
-        component: DashboardView,
+        component: () => import('@/views/admin/DashboardView.vue'),
       },
       {
-        path: 'users',
-        name: 'admin.users',
-        component: UsersView,
-        meta: { permission: 'users.view' },
-      },
-      {
-        path: 'roles',
-        name: 'admin.roles',
-        component: RolesView,
-        meta: { permission: 'roles.manage' },
-      },
-      {
-        path: 'finance',
-        name: 'admin.finance',
-        component: FinanceView,
-        meta: { permission: 'finance.view' },
+        path: 'orders',
+        name: 'admin.orders',
+        component: () => import('@/views/admin/AdminModulePlaceholderView.vue'),
+        meta: {
+          permission: 'orders.view',
+          title: 'Order Management',
+          description: 'Manage customer orders, update fulfillment status, add tracking numbers, and issue Stripe refunds.',
+        },
       },
       {
         path: 'products',
         name: 'admin.products',
-        component: ProductsView,
+        component: () => import('@/views/admin/ProductsView.vue'),
         meta: { permission: 'products.view' },
       },
       {
         path: 'products/create',
         name: 'admin.products.create',
-        component: ProductFormView,
+        component: () => import('@/views/admin/ProductFormView.vue'),
         meta: { permission: 'products.create' },
       },
       {
         path: 'products/:id/edit',
         name: 'admin.products.edit',
-        component: ProductFormView,
+        component: () => import('@/views/admin/ProductFormView.vue'),
         meta: { permission: 'products.update' },
       },
       {
         path: 'categories',
         name: 'admin.categories',
-        component: CategoriesView,
+        component: () => import('@/views/admin/CategoriesView.vue'),
         meta: { permission: 'categories.manage' },
+      },
+      {
+        path: 'brands',
+        name: 'admin.brands',
+        component: () => import('@/views/admin/AdminModulePlaceholderView.vue'),
+        meta: {
+          permission: 'brands.manage',
+          title: 'Brands & Labels',
+          description: 'Manage product brands, logos, and brand landing descriptions.',
+        },
+      },
+      {
+        path: 'customers',
+        name: 'admin.customers',
+        component: () => import('@/views/admin/AdminModulePlaceholderView.vue'),
+        meta: {
+          permission: 'users.view',
+          title: 'Customers Directory',
+          description: 'View registered customer profiles, order history, internal notes, and CSV exports.',
+        },
+      },
+      {
+        path: 'reviews',
+        name: 'admin.reviews',
+        component: () => import('@/views/admin/AdminModulePlaceholderView.vue'),
+        meta: {
+          permission: 'reviews.manage',
+          title: 'Product Reviews',
+          description: 'Approve or reject customer reviews, create custom storefront reviews, and import via CSV.',
+        },
+      },
+      {
+        path: 'coupons',
+        name: 'admin.coupons',
+        component: () => import('@/views/admin/AdminModulePlaceholderView.vue'),
+        meta: {
+          permission: 'coupons.manage',
+          title: 'Coupons & Discounts',
+          description: 'Create and manage promo codes, percentage/fixed discounts, and minimum order rules.',
+        },
+      },
+      {
+        path: 'chat',
+        name: 'admin.chat',
+        component: () => import('@/views/admin/AdminModulePlaceholderView.vue'),
+        meta: {
+          permission: 'chat.manage',
+          title: 'Live Chat Inbox',
+          description: 'Respond to real-time customer inquiries, view visitor cart context, and use canned replies.',
+        },
+      },
+      {
+        path: 'marketing',
+        name: 'admin.marketing',
+        component: () => import('@/views/admin/AdminModulePlaceholderView.vue'),
+        meta: {
+          title: 'Marketing (Hero Slides, Popups & Banners)',
+          description: 'Configure homepage hero slides, promotional popups, newsletter signups, and trust banners.',
+        },
       },
       {
         path: 'menus',
         name: 'admin.menus',
-        component: MenusView,
+        component: () => import('@/views/admin/MenusView.vue'),
         meta: { permission: 'menus.manage' },
+      },
+      {
+        path: 'pages',
+        name: 'admin.pages',
+        component: () => import('@/views/admin/AdminModulePlaceholderView.vue'),
+        meta: {
+          permission: 'pages.manage',
+          title: 'CMS Pages',
+          description: 'Edit About, FAQ, Shipping, Returns, Privacy Policy, and Terms of Service pages.',
+        },
+      },
+      {
+        path: 'finance',
+        name: 'admin.finance',
+        component: () => import('@/views/admin/FinanceView.vue'),
+        meta: { permission: 'finance.view' },
+      },
+      {
+        path: 'users',
+        name: 'admin.users',
+        component: () => import('@/views/admin/UsersView.vue'),
+        meta: { permission: 'users.view' },
+      },
+      {
+        path: 'roles',
+        name: 'admin.roles',
+        component: () => import('@/views/admin/RolesView.vue'),
+        meta: { permission: 'roles.manage' },
       },
       {
         path: 'settings',
         name: 'admin.settings',
-        component: SettingsView,
+        component: () => import('@/views/admin/SettingsView.vue'),
         meta: { permission: 'settings.view' },
+      },
+      {
+        path: 'email-templates',
+        name: 'admin.email-templates',
+        component: () => import('@/views/admin/AdminModulePlaceholderView.vue'),
+        meta: {
+          permission: 'mail.manage',
+          title: 'Email Templates & Logs',
+          description: 'Customize transactional HTML email templates, preview variables, and inspect SMTP delivery logs.',
+        },
+      },
+      {
+        path: 'activity-log',
+        name: 'admin.activity-log',
+        component: () => import('@/views/admin/AdminModulePlaceholderView.vue'),
+        meta: {
+          permission: 'activity.view',
+          title: 'System Activity Log',
+          description: 'Audit trail of administrative actions, actor users, timestamps, and IP addresses.',
+        },
       },
     ],
   },

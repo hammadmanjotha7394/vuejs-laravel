@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FinanceController;
 use App\Http\Controllers\Admin\MenuController;
 use App\Http\Controllers\Admin\ProductController;
@@ -102,6 +103,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Admin Routes
     Route::prefix('admin')->group(function () {
+        // Dashboard Home & Notifications (Staff only; revenue gated by finance.view)
+        Route::get('/dashboard', [DashboardController::class, 'index']);
+
         // Staff & User Management
         Route::get('/users', [UserController::class, 'index'])->middleware('permission:users.view');
         Route::post('/users', [UserController::class, 'store'])->middleware('permission:users.create');
