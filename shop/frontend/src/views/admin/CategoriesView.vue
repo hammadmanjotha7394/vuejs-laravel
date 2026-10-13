@@ -394,35 +394,46 @@ async function handleImageUpload(e) {
             </select>
           </div>
 
-          <!-- Circular Tile Image Upload -->
+          <!-- Circular Tile Image Upload & URL -->
           <div class="space-y-2">
-            <label class="block text-xs font-semibold text-gray-700 uppercase">Circular Tile Image</label>
+            <div class="flex items-center justify-between">
+              <label class="block text-xs font-semibold text-gray-700 uppercase">Circular Tile Image (Upload or Image URL)</label>
+              <button
+                v-if="form.image"
+                type="button"
+                class="text-xs text-rose-600 hover:underline font-medium"
+                @click="form.image = ''"
+              >
+                Clear Image
+              </button>
+            </div>
             <div class="flex items-center gap-3">
-              <div class="w-12 h-12 rounded-full border border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden flex-shrink-0">
+              <div class="w-14 h-14 rounded-full border border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm">
                 <img v-if="form.image" :src="form.image" class="w-full h-full object-cover" />
                 <ImageIcon v-else class="w-5 h-5 text-gray-400" />
               </div>
-              <div class="flex-1 flex items-center gap-2">
-                <label
-                  class="cursor-pointer px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 inline-flex items-center gap-1.5"
-                >
-                  <Upload class="w-3.5 h-3.5" />
-                  <span>{{ uploading ? 'Uploading...' : 'Upload Image' }}</span>
-                  <input
-                    type="file"
-                    class="hidden"
-                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                    @change="handleImageUpload"
-                  />
-                </label>
-                <button
-                  v-if="form.image"
-                  type="button"
-                  class="text-xs text-rose-600 hover:underline"
-                  @click="form.image = ''"
-                >
-                  Remove
-                </button>
+              <div class="flex-1 space-y-2">
+                <input
+                  v-model="form.image"
+                  type="text"
+                  placeholder="Paste image URL (https://...) or upload file below"
+                  class="w-full px-3.5 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2F5D50] text-xs"
+                />
+                <div class="flex items-center gap-2">
+                  <label
+                    class="cursor-pointer px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 inline-flex items-center gap-1.5"
+                  >
+                    <Upload class="w-3.5 h-3.5" />
+                    <span>{{ uploading ? 'Uploading...' : 'Upload Image File' }}</span>
+                    <input
+                      type="file"
+                      class="hidden"
+                      accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                      @change="handleImageUpload"
+                    />
+                  </label>
+                  <span class="text-[11px] text-gray-400">Supports HTTPS URL, JPG, PNG, WebP, or SVG</span>
+                </div>
               </div>
             </div>
           </div>
