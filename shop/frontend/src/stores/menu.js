@@ -44,5 +44,12 @@ export const useMenuStore = defineStore('menu', {
       this.loaded = false
       return this.fetchMenus()
     },
+
+    async fetchMenu(slug, force = false) {
+      if (force) {
+        this.loaded = false
+      }
+      return this.fetchMenus()
+    },
   },
 })

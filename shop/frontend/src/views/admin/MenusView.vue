@@ -147,9 +147,24 @@ function onTargetPageSelect(pageId) {
 
 function openCreateItem(parentId = null) {
   editingItem.value = null
+  const allItems = currentMenu.value?.all_items || []
+  const parentItem = parentId
+    ? allItems.find((i) => Number(i.id) === Number(parentId))
+    : null
+  const isChildOfTop = Boolean(parentItem && !parentItem.parent_id)
+  const isSubLink = Boolean(parentItem && parentItem.parent_id)
+
+  let defaultCol = 0
+  if (isChildOfTop) {
+    const existingCols = getChildren(parentItem.id).length
+    defaultCol = Math.min(existingCols + 1, 5)
+  } else if (isSubLink) {
+    defaultCol = parentItem.column_index || 1
+  }
+
   itemForm.value = {
     label: '',
-    type: parentId ? 'mega_group' : 'category',
+    type: isChildOfTop ? 'mega_group' : 'category',
     parent_id: parentId || '',
     target_id: null,
     url: '',
@@ -159,8 +174,8 @@ function openCreateItem(parentId = null) {
     featured_button_text: '',
     featured_button_url: '',
     badge_text: '',
-    sort_order: (currentMenu.value?.all_items?.length || 0) + 1,
-    column_index: parentId ? 1 : 0,
+    sort_order: allItems.length + 1,
+    column_index: defaultCol,
     is_active: true,
   }
   isItemModalOpen.value = true
@@ -401,30 +416,43 @@ async function handleImageUpload(e) {
                   :key="'prev-col-' + colItem.id"
                   class="space-y-2.5"
                 >
-                  <div class="text-xs font-bold uppercase tracking-wider text-gray-900 border-b border-gray-100 pb-1.5 flex items-center gap-1.5">
-                    <span>{{ colItem.label }}</span>
-                    <span
-                      v-if="colItem.badge_text"
-                      class="px-1.5 py-0.5 rounded-full text-[9px] bg-emerald-50 text-emerald-700"
-                    >
-                      {{ colItem.badge_text }}
-                    </span>
-                  </div>
-                  <ul class="space-y-1.5 text-xs text-gray-600">
-                    <li
-                      v-for="subLink in getChildren(colItem.id)"
-                      :key="'prev-sub-' + subLink.id"
-                      class="hover:text-[#2F5D50] flex items-center gap-1.5"
-                    >
-                      <span>{{ subLink.label }}</span>
+                  <template v-if="getChildren(colItem.id).length > 0 || colItem.type === 'mega_group'">
+                    <div class="text-xs font-bold uppercase tracking-wider text-gray-900 border-b border-gray-100 pb-1.5 flex items-center gap-1.5">
+                      <span>{{ colItem.label }}</span>
                       <span
-                        v-if="subLink.badge_text"
-                        class="px-1.5 py-0.2 rounded-full text-[9px] bg-amber-50 text-amber-700 font-semibold"
+                        v-if="colItem.badge_text"
+                        class="px-1.5 py-0.5 rounded-full text-[9px] bg-emerald-50 text-emerald-700"
                       >
-                        {{ subLink.badge_text }}
+                        {{ colItem.badge_text }}
                       </span>
-                    </li>
-                  </ul>
+                    </div>
+                    <ul class="space-y-1.5 text-xs text-gray-600">
+                      <li
+                        v-for="subLink in getChildren(colItem.id)"
+                        :key="'prev-sub-' + subLink.id"
+                        class="hover:text-[#2F5D50] flex items-center gap-1.5"
+                      >
+                        <span>{{ subLink.label }}</span>
+                        <span
+                          v-if="subLink.badge_text"
+                          class="px-1.5 py-0.2 rounded-full text-[9px] bg-amber-50 text-amber-700 font-semibold"
+                        >
+                          {{ subLink.badge_text }}
+                        </span>
+                      </li>
+                    </ul>
+                  </template>
+                  <template v-else>
+                    <div class="text-xs font-medium text-gray-700 hover:text-[#2F5D50] flex items-center gap-1.5 py-1">
+                      <span>{{ colItem.label }}</span>
+                      <span
+                        v-if="colItem.badge_text"
+                        class="px-1.5 py-0.5 rounded-full text-[9px] bg-emerald-50 text-emerald-700"
+                      >
+                        {{ colItem.badge_text }}
+                      </span>
+                    </div>
+                  </template>
                 </div>
               </div>
 
@@ -647,6 +675,33 @@ async function handleImageUpload(e) {
         </div>
 
         <form class="space-y-4" @submit.prevent="handleSaveItem">
+          <!-- Parent Item Selector -->
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Parent Item / Placement</label>
+            <select
+              v-model="itemForm.parent_id"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2F5D50] text-sm"
+            >
+              <option value="">None (Top-Level Navbar Item)</option>
+              <template v-for="top in getTopLevelItems()" :key="'p-top-' + top.id">
+                <option
+                  v-if="!editingItem || editingItem.id !== top.id"
+                  :value="top.id"
+                >
+                  ↳ Under "{{ top.label }}" (Mega Menu Column / Link)
+                </option>
+                <template v-for="child in getChildren(top.id)" :key="'p-child-' + child.id">
+                  <option
+                    v-if="!editingItem || editingItem.id !== child.id"
+                    :value="child.id"
+                  >
+                    &nbsp;&nbsp;&nbsp;&nbsp;↳ Inside Column "{{ top.label }} › {{ child.label }}"
+                  </option>
+                </template>
+              </template>
+            </select>
+          </div>
+
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Type</label>
@@ -666,7 +721,7 @@ async function handleImageUpload(e) {
                 v-model="itemForm.column_index"
                 class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2F5D50] text-sm"
               >
-                <option :value="0">None / Full</option>
+                <option :value="0">None / Auto</option>
                 <option :value="1">Column 1</option>
                 <option :value="2">Column 2</option>
                 <option :value="3">Column 3</option>
@@ -737,22 +792,42 @@ async function handleImageUpload(e) {
             </div>
           </div>
 
-          <!-- Featured Card Section (Optional) -->
+          <!-- Featured Card Section (Optional, for Top-Level Mega Menu items) -->
           <div class="p-3.5 rounded-xl border border-gray-100 bg-gray-50/70 space-y-3">
             <span class="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
               Mega Menu Featured Banner Card (Optional)
             </span>
-            <div class="flex items-center gap-3">
-              <img
-                v-if="itemForm.image"
-                :src="itemForm.image"
-                class="w-12 h-10 object-cover rounded-lg border border-gray-200"
+
+            <div>
+              <label class="block text-[11px] font-medium text-gray-600 mb-1">Banner Image URL</label>
+              <input
+                v-model="itemForm.image"
+                type="text"
+                placeholder="https://images.unsplash.com/... or /storage/menus/..."
+                class="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#2F5D50]"
               />
+            </div>
+
+            <div class="flex items-center gap-3">
+              <div v-if="itemForm.image" class="relative">
+                <img
+                  :src="itemForm.image"
+                  class="w-16 h-12 object-cover rounded-lg border border-gray-200"
+                />
+                <button
+                  type="button"
+                  title="Remove image"
+                  class="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] flex items-center justify-center shadow"
+                  @click="itemForm.image = ''"
+                >
+                  ×
+                </button>
+              </div>
               <label
                 class="cursor-pointer px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 inline-flex items-center gap-1.5"
               >
                 <Upload class="w-3.5 h-3.5" />
-                <span>{{ uploading ? 'Uploading...' : 'Upload Banner Image' }}</span>
+                <span>{{ uploading ? 'Uploading...' : 'Or Upload Image File' }}</span>
                 <input
                   type="file"
                   class="hidden"
@@ -782,6 +857,27 @@ async function handleImageUpload(e) {
                 class="px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-mono"
               />
             </div>
+          </div>
+
+          <!-- Active & New Tab Toggles -->
+          <div class="flex items-center justify-between pt-1">
+            <label class="inline-flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer">
+              <input
+                v-model="itemForm.is_active"
+                type="checkbox"
+                class="rounded border-gray-300 text-[#2F5D50] focus:ring-[#2F5D50]"
+              />
+              <span>Visible on Storefront</span>
+            </label>
+
+            <label class="inline-flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer">
+              <input
+                v-model="itemForm.open_in_new_tab"
+                type="checkbox"
+                class="rounded border-gray-300 text-[#2F5D50] focus:ring-[#2F5D50]"
+              />
+              <span>Open link in new tab</span>
+            </label>
           </div>
 
           <div class="pt-3 border-t border-gray-100 flex justify-end gap-2">

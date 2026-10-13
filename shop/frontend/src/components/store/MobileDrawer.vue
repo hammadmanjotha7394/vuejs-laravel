@@ -198,11 +198,11 @@ onUnmounted(() => {
                       :key="'col-' + colIdx"
                       class="py-1"
                     >
-                      <p v-if="col.heading" class="text-[11px] font-bold text-ink uppercase tracking-wider py-1">
-                        {{ col.heading }}
+                      <p v-if="col.heading || col.title" class="text-[11px] font-bold text-ink uppercase tracking-wider py-1">
+                        {{ col.heading || col.title }}
                       </p>
                       <RouterLink
-                        v-for="sub in col.links"
+                        v-for="sub in (col.links || col.items || [])"
                         :key="'sub-' + sub.id"
                         :to="sub.url || '#'"
                         @click="handleLinkClick"

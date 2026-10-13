@@ -42,7 +42,7 @@ const handleScroll = () => {
 
 const openMegaMenu = (item) => {
   clearTimeout(closeTimeout)
-  if (!item.columns?.length && !item.children?.length) {
+  if (!item.columns?.length && !item.children?.length && !item.featured_card) {
     activeMegaItem.value = null
     return
   }
@@ -340,19 +340,19 @@ const mainMenuItems = computed(() => {
       leave-to-class="opacity-0 -translate-y-2"
     >
       <div
-        v-if="activeMegaItem && ((activeMegaItem.columns && activeMegaItem.columns.length > 0) || (activeMegaItem.children && activeMegaItem.children.length > 0))"
+        v-if="activeMegaItem && ((activeMegaItem.columns && activeMegaItem.columns.length > 0) || (activeMegaItem.children && activeMegaItem.children.length > 0) || activeMegaItem.featured_card)"
         class="absolute left-0 right-0 top-full bg-white border-b border-line shadow-2xl rounded-b-2xl overflow-hidden z-30"
         @mouseenter="openMegaMenu(activeMegaItem)"
         @mouseleave="closeMegaMenu"
       >
         <div class="max-w-container mx-auto px-6 lg:px-8 py-8">
           <div class="grid grid-cols-12 gap-8">
-            <!-- Left / Center: Columns of Links (3 to 5 columns) -->
+            <!-- Left / Center: Columns of Links (1 to 5 columns) -->
             <div
               class="grid gap-6"
               :class="activeMegaItem.featured_card ? 'col-span-8 sm:col-span-9' : 'col-span-12'"
               :style="{
-                gridTemplateColumns: `repeat(${Math.min(activeMegaItem.columns?.length || 3, 5)}, minmax(0, 1fr))`
+                gridTemplateColumns: `repeat(${Math.max(1, Math.min(activeMegaItem.columns?.length || 3, 5))}, minmax(0, 1fr))`
               }"
             >
               <!-- Structured Columns -->
@@ -362,11 +362,25 @@ const mainMenuItems = computed(() => {
                   :key="'mega-col-' + colIdx"
                   class="space-y-3"
                 >
-                  <h4 v-if="col.heading" class="text-xs font-bold uppercase tracking-wider text-ink border-b border-line/60 pb-2">
-                    {{ col.heading }}
+                  <h4 v-if="col.heading || col.title" class="text-xs font-bold uppercase tracking-wider text-ink border-b border-line/60 pb-2 flex items-center gap-1.5">
+                    <RouterLink
+                      v-if="col.url"
+                      :to="col.url"
+                      @click="activeMegaItem = null"
+                      class="hover:text-brand transition"
+                    >
+                      {{ col.heading || col.title }}
+                    </RouterLink>
+                    <span v-else>{{ col.heading || col.title }}</span>
+                    <span
+                      v-if="col.badge_text"
+                      class="text-[9px] font-bold px-1.5 py-0.2 rounded-pill bg-brand/10 text-brand normal-case"
+                    >
+                      {{ col.badge_text }}
+                    </span>
                   </h4>
                   <ul class="space-y-2 text-xs">
-                    <li v-for="link in col.links" :key="'link-' + link.id">
+                    <li v-for="link in (col.links || col.items || [])" :key="'link-' + link.id">
                       <RouterLink
                         :to="link.url || '#'"
                         @click="activeMegaItem = null"

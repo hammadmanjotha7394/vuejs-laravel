@@ -71,43 +71,53 @@ class MenuService
     {
         $children = $allItems->where('parent_id', $item->id)->sortBy('sort_order');
 
-        $hasColumns = $children->where('column_index', '>', 0)->isNotEmpty()
-            || $children->where('type', 'mega_group')->isNotEmpty();
-        $hasFeaturedCard = ! empty($item->image);
+        $hasSubChildren = $children->contains(function (MenuItem $c) use ($allItems) {
+            return $c->type === 'mega_group' || $allItems->where('parent_id', $c->id)->isNotEmpty();
+        });
+        $hasColumns = $children->where('column_index', '>', 0)->isNotEmpty() || $hasSubChildren;
+        $hasFeaturedCard = ! empty($item->image) || ! empty($item->featured_title);
 
-        $isMega = $hasColumns || $hasFeaturedCard;
+        $isMega = $hasColumns || $hasFeaturedCard || $children->isNotEmpty();
 
         $columns = [];
-        if ($isMega) {
-            // Group children into 1-5 columns
-            for ($col = 1; $col <= 5; $col++) {
-                $colChildren = $children->where('column_index', $col);
-                if ($colChildren->isEmpty()) {
-                    continue;
-                }
+        if ($isMega && $children->isNotEmpty()) {
+            $directLinksByCol = [];
 
-                // If first item in column is a mega_group, use its label as column title
-                $firstItem = $colChildren->first();
-                $columnTitle = null;
-                $columnItems = [];
+            foreach ($children->sortBy([['column_index', 'asc'], ['sort_order', 'asc']]) as $child) {
+                $subItems = $allItems->where('parent_id', $child->id)->sortBy('sort_order');
 
-                if ($firstItem && $firstItem->type === 'mega_group') {
-                    $columnTitle = $firstItem->label;
-                    // Sub-items of this mega group
-                    $groupChildren = $allItems->where('parent_id', $firstItem->id)->sortBy('sort_order');
-                    foreach ($groupChildren as $gChild) {
-                        $columnItems[] = self::formatSimpleItem($gChild);
+                if ($child->type === 'mega_group' || $subItems->isNotEmpty()) {
+                    $formattedSubs = [];
+                    foreach ($subItems as $gChild) {
+                        $formattedSubs[] = self::formatSimpleItem($gChild);
                     }
+                    if (empty($formattedSubs) && ! empty($child->url)) {
+                        $formattedSubs[] = self::formatSimpleItem($child);
+                    }
+
+                    $colNum = $child->column_index > 0 ? $child->column_index : (count($columns) + 1);
+                    $columns[] = [
+                        'column_index' => (int) $colNum,
+                        'title' => $child->label,
+                        'heading' => $child->label,
+                        'url' => $child->url,
+                        'badge_text' => $child->badge_text,
+                        'items' => $formattedSubs,
+                        'links' => $formattedSubs,
+                    ];
                 } else {
-                    foreach ($colChildren as $cChild) {
-                        $columnItems[] = self::formatSimpleItem($cChild);
-                    }
+                    $colKey = $child->column_index > 0 ? $child->column_index : 1;
+                    $directLinksByCol[$colKey][] = self::formatSimpleItem($child);
                 }
+            }
 
+            foreach ($directLinksByCol as $colNum => $links) {
                 $columns[] = [
-                    'column_index' => $col,
-                    'title' => $columnTitle,
-                    'items' => $columnItems,
+                    'column_index' => (int) $colNum,
+                    'title' => null,
+                    'heading' => null,
+                    'items' => $links,
+                    'links' => $links,
                 ];
             }
         }
@@ -125,9 +135,10 @@ class MenuService
             'is_mega' => $isMega,
             'featured_card' => $hasFeaturedCard ? [
                 'image' => $item->image,
-                'title' => $item->featured_title,
-                'button_text' => $item->featured_button_text,
-                'button_url' => $item->featured_button_url,
+                'title' => $item->featured_title ?: $item->label,
+                'badge' => $item->badge_text,
+                'button_text' => $item->featured_button_text ?: 'Discover Now',
+                'button_url' => $item->featured_button_url ?: ($item->url ?: '/shop'),
             ] : null,
             'columns' => $columns,
             'children' => $children->map(fn (MenuItem $c) => self::formatSimpleItem($c))->values()->toArray(),
