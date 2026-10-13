@@ -823,7 +823,7 @@ useHead({
             >
               <Loader2 v-if="isInstantCheckingOut" class="w-4 h-4 animate-spin" />
               <Zap v-else class="w-4 h-4 text-amber-300 fill-amber-300 transition-transform group-hover:scale-110" />
-              <span>Instant Checkout • Buy Now (${{ (currentPrice * quantity).toFixed(2) }})</span>
+              <span>Instant Checkout • Buy Now ({{ settingsStore.formatPrice(currentPrice * quantity) }})</span>
             </button>
 
             <!-- Back-in-Stock Notify Me Box (shown when out of stock) -->
@@ -861,7 +861,7 @@ useHead({
             <div class="flex items-center gap-2.5">
               <Truck class="w-4 h-4 text-brand flex-shrink-0" />
               <span>
-                {{ settingsStore.freeShippingThreshold > 0 ? `Free standard shipping over $${settingsStore.freeShippingThreshold}.` : 'Fast, reliable shipping worldwide.' }}
+                {{ settingsStore.freeShippingThreshold > 0 ? `Free standard shipping over ${settingsStore.currencySymbol}${settingsStore.freeShippingThreshold}.` : 'Fast, reliable shipping worldwide.' }}
                 Estimated delivery in <strong>3–5 business days</strong>.
               </span>
             </div>

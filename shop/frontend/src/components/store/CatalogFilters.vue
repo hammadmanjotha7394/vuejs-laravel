@@ -198,7 +198,7 @@ const maxPossiblePrice = computed(() => props.facets?.price_range?.max ?? 350)
                 <div class="flex-1">
                   <label class="text-[10px] text-ink-muted uppercase block mb-1">Min</label>
                   <div class="relative">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-ink-muted">$</span>
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-ink-muted">{{ settingsStore.currencySymbol }}</span>
                     <input
                       type="number"
                       v-model.number="localFilters.price_min"
@@ -212,7 +212,7 @@ const maxPossiblePrice = computed(() => props.facets?.price_range?.max ?? 350)
                 <div class="flex-1">
                   <label class="text-[10px] text-ink-muted uppercase block mb-1">Max</label>
                   <div class="relative">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-ink-muted">$</span>
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-ink-muted">{{ settingsStore.currencySymbol }}</span>
                     <input
                       type="number"
                       v-model.number="localFilters.price_max"
@@ -387,7 +387,7 @@ const maxPossiblePrice = computed(() => props.facets?.price_range?.max ?? 350)
             <div class="flex-1">
               <label class="text-[10px] text-ink-muted uppercase block mb-1">Min</label>
               <div class="relative">
-                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-ink-muted">$</span>
+                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-ink-muted">{{ settingsStore.currencySymbol }}</span>
                 <input
                   type="number"
                   v-model.number="localFilters.price_min"
@@ -401,7 +401,7 @@ const maxPossiblePrice = computed(() => props.facets?.price_range?.max ?? 350)
             <div class="flex-1">
               <label class="text-[10px] text-ink-muted uppercase block mb-1">Max</label>
               <div class="relative">
-                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-ink-muted">$</span>
+                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-ink-muted">{{ settingsStore.currencySymbol }}</span>
                 <input
                   type="number"
                   v-model.number="localFilters.price_max"

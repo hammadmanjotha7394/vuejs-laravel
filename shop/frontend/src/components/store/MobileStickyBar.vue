@@ -1,5 +1,6 @@
 <script setup>
 import { ShoppingBag, Zap, Loader2 } from 'lucide-vue-next'
+import { useSettingsStore } from '@/stores/settings'
 
 const props = defineProps({
   product: {
@@ -29,6 +30,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['addToCart', 'instantCheckout'])
+const settingsStore = useSettingsStore()
 </script>
 
 <template>
@@ -60,7 +62,7 @@ const emit = defineEmits(['addToCart', 'instantCheckout'])
               {{ product.name }}
             </h4>
             <div class="text-xs font-bold text-ink mt-0.5">
-              ${{ currentPrice.toFixed(2) }}
+              {{ settingsStore.formatPrice(currentPrice) }}
             </div>
           </div>
         </div>

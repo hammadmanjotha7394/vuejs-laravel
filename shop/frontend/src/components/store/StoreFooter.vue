@@ -12,6 +12,9 @@ import {
   MessageCircle,
   Loader2,
   Lock,
+  Mail,
+  Phone,
+  MapPin,
 } from 'lucide-vue-next'
 import { useSettingsStore } from '@/stores/settings'
 import { useMenuStore } from '@/stores/menu'
@@ -62,11 +65,20 @@ const copyrightText = computed(() => {
 const footerText = computed(() => {
   return (
     settingsStore.headerFooter?.footer_text ||
+    settingsStore.siteTagline ||
     'Mindful apparel and artisanal home objects created in small, deliberate batches with European and Japanese heritage workshops.'
   )
 })
 
 const socialLinks = computed(() => settingsStore.socialLinks || {})
+
+const whatsappUrl = computed(() => {
+  const raw = socialLinks.value.whatsapp
+  if (!raw) return null
+  if (raw.startsWith('http')) return raw
+  const cleaned = raw.replace(/[^0-9]/g, '')
+  return cleaned ? `https://wa.me/${cleaned}` : null
+})
 
 const footerMenuItems = computed(() => {
   return menuStore.footerMenu?.items || []
@@ -80,14 +92,14 @@ const footerMenuItems = computed(() => {
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8 pb-12 border-b border-line">
         <!-- Col 1: Brand story & Socials (4 cols) -->
         <div class="lg:col-span-4 space-y-4">
-          <RouterLink to="/" class="inline-block">
+          <RouterLink to="/" class="inline-block group focus:outline-none">
             <img
               v-if="settingsStore.logoUrl"
               :src="settingsStore.logoUrl"
               :alt="settingsStore.siteName"
-              class="h-7 sm:h-8 object-contain"
+              class="h-7 sm:h-8 object-contain transition-transform group-hover:scale-102"
             />
-            <span v-else class="text-xl font-bold tracking-tight text-ink">
+            <span v-else class="text-xl font-bold tracking-tight text-ink group-hover:text-brand transition-colors">
               {{ settingsStore.siteName }}
             </span>
           </RouterLink>
@@ -97,13 +109,13 @@ const footerMenuItems = computed(() => {
           </p>
 
           <!-- Social media links -->
-          <div class="pt-2 flex items-center gap-3">
+          <div class="pt-1 flex items-center flex-wrap gap-2.5">
             <a
               v-if="socialLinks.instagram"
               :href="socialLinks.instagram"
               target="_blank"
               rel="noopener noreferrer"
-              class="w-8 h-8 rounded-full bg-white border border-line flex items-center justify-center text-ink-muted hover:text-brand hover:border-brand transition"
+              class="w-8 h-8 rounded-full bg-white border border-line flex items-center justify-center text-ink-muted hover:text-brand hover:border-brand transition shadow-xs"
               aria-label="Instagram"
             >
               <Instagram class="w-4 h-4" />
@@ -114,7 +126,7 @@ const footerMenuItems = computed(() => {
               :href="socialLinks.facebook"
               target="_blank"
               rel="noopener noreferrer"
-              class="w-8 h-8 rounded-full bg-white border border-line flex items-center justify-center text-ink-muted hover:text-brand hover:border-brand transition"
+              class="w-8 h-8 rounded-full bg-white border border-line flex items-center justify-center text-ink-muted hover:text-brand hover:border-brand transition shadow-xs"
               aria-label="Facebook"
             >
               <Facebook class="w-4 h-4" />
@@ -125,7 +137,7 @@ const footerMenuItems = computed(() => {
               :href="socialLinks.youtube"
               target="_blank"
               rel="noopener noreferrer"
-              class="w-8 h-8 rounded-full bg-white border border-line flex items-center justify-center text-ink-muted hover:text-brand hover:border-brand transition"
+              class="w-8 h-8 rounded-full bg-white border border-line flex items-center justify-center text-ink-muted hover:text-brand hover:border-brand transition shadow-xs"
               aria-label="YouTube"
             >
               <Youtube class="w-4 h-4" />
@@ -136,21 +148,54 @@ const footerMenuItems = computed(() => {
               :href="socialLinks.x || socialLinks.twitter"
               target="_blank"
               rel="noopener noreferrer"
-              class="w-8 h-8 rounded-full bg-white border border-line flex items-center justify-center text-ink-muted hover:text-brand hover:border-brand transition"
+              class="w-8 h-8 rounded-full bg-white border border-line flex items-center justify-center text-ink-muted hover:text-brand hover:border-brand transition shadow-xs"
               aria-label="X / Twitter"
             >
               <Twitter class="w-4 h-4" />
             </a>
 
             <a
-              v-if="socialLinks.whatsapp"
-              :href="`https://wa.me/${socialLinks.whatsapp}`"
+              v-if="socialLinks.tiktok"
+              :href="socialLinks.tiktok.startsWith('http') ? socialLinks.tiktok : `https://tiktok.com/@${socialLinks.tiktok.replace('@', '')}`"
               target="_blank"
               rel="noopener noreferrer"
-              class="w-8 h-8 rounded-full bg-white border border-line flex items-center justify-center text-ink-muted hover:text-brand hover:border-brand transition"
+              class="w-8 h-8 rounded-full bg-white border border-line flex items-center justify-center text-ink-muted hover:text-brand hover:border-brand transition shadow-xs"
+              aria-label="TikTok"
+            >
+              <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.86.11V9.4a6.33 6.33 0 0 0-.86-.06 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.78c1.37.98 3.03 1.55 4.83 1.55V6.89c-.36 0-.72-.07-1.06-.2z"/>
+              </svg>
+            </a>
+
+            <a
+              v-if="whatsappUrl"
+              :href="whatsappUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="w-8 h-8 rounded-full bg-white border border-line flex items-center justify-center text-ink-muted hover:text-brand hover:border-brand transition shadow-xs"
               aria-label="WhatsApp"
             >
               <MessageCircle class="w-4 h-4" />
+            </a>
+          </div>
+
+          <!-- Customer Care Quick Info from Settings -->
+          <div v-if="settingsStore.supportEmail || settingsStore.supportPhone" class="pt-2 space-y-1.5 text-xs text-ink-muted">
+            <a
+              v-if="settingsStore.supportEmail"
+              :href="`mailto:${settingsStore.supportEmail}`"
+              class="flex items-center gap-2 hover:text-brand transition"
+            >
+              <Mail class="w-3.5 h-3.5 text-brand" />
+              <span>{{ settingsStore.supportEmail }}</span>
+            </a>
+            <a
+              v-if="settingsStore.supportPhone"
+              :href="`tel:${settingsStore.supportPhone}`"
+              class="flex items-center gap-2 hover:text-brand transition"
+            >
+              <Phone class="w-3.5 h-3.5 text-brand" />
+              <span>{{ settingsStore.supportPhone }}</span>
             </a>
           </div>
         </div>

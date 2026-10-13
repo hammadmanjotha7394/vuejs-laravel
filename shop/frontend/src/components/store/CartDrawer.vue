@@ -15,9 +15,11 @@ import {
   Loader2,
 } from 'lucide-vue-next'
 import { useCartStore } from '@/stores/cart'
+import { useSettingsStore } from '@/stores/settings'
 
 const router = useRouter()
 const cartStore = useCartStore()
+const settingsStore = useSettingsStore()
 
 const couponCodeInput = ref('')
 const isApplyingCoupon = ref(false)
@@ -107,7 +109,7 @@ const navigateTo = (path) => {
             </span>
             <span v-else class="text-ink-muted flex items-center gap-1">
               <Truck class="w-3.5 h-3.5 text-brand" />
-              <span>Add <strong>${{ cartStore.shipping.amount_needed.toFixed(2) }}</strong> more for free shipping</span>
+              <span>Add <strong>{{ settingsStore.currencySymbol }}{{ cartStore.shipping.amount_needed.toFixed(2) }}</strong> more for free shipping</span>
             </span>
             <span class="font-mono text-ink text-[11px]">
               {{ cartStore.shipping.progress_percentage }}%
@@ -285,7 +287,7 @@ const navigateTo = (path) => {
                 <div class="flex items-center gap-1.5">
                   <Tag class="w-3.5 h-3.5 text-emerald-600" />
                   <span class="font-bold">{{ cartStore.coupon.code }}</span>
-                  <span class="text-[11px] text-emerald-700">(-${{ cartStore.discount.toFixed(2) }})</span>
+                  <span class="text-[11px] text-emerald-700">(-{{ settingsStore.formatPrice(cartStore.discount) }})</span>
                 </div>
 
                 <button
@@ -303,12 +305,12 @@ const navigateTo = (path) => {
             <div class="space-y-1.5 text-xs">
               <div class="flex items-center justify-between text-ink-muted">
                 <span>Subtotal</span>
-                <span class="font-mono text-ink font-semibold">${{ cartStore.subtotal.toFixed(2) }}</span>
+                <span class="font-mono text-ink font-semibold">{{ settingsStore.formatPrice(cartStore.subtotal) }}</span>
               </div>
 
               <div v-if="cartStore.discount > 0" class="flex items-center justify-between text-emerald-700">
                 <span>Promotional Discount</span>
-                <span class="font-mono font-semibold">-${{ cartStore.discount.toFixed(2) }}</span>
+                <span class="font-mono font-semibold">-{{ settingsStore.formatPrice(cartStore.discount) }}</span>
               </div>
 
               <div class="flex items-center justify-between text-ink-muted">
@@ -318,7 +320,7 @@ const navigateTo = (path) => {
 
               <div class="pt-2 border-t border-line flex items-center justify-between text-sm font-extrabold text-ink">
                 <span>Estimated Total</span>
-                <span class="font-mono text-base">${{ cartStore.grandTotal.toFixed(2) }}</span>
+                <span class="font-mono text-base">{{ settingsStore.formatPrice(cartStore.grandTotal) }}</span>
               </div>
             </div>
 

@@ -14,11 +14,11 @@ const iconMap = {
   Award,
 }
 
-const defaultPoints = [
+const defaultPoints = computed(() => [
   {
     icon: Truck,
     title: 'Carbon-Neutral Delivery',
-    desc: 'Free standard shipping on all domestic orders over $75.',
+    desc: `Free standard shipping on all domestic orders over ${settingsStore.currencySymbol}${settingsStore.freeShippingThreshold || 75}.`,
   },
   {
     icon: RotateCcw,
@@ -35,18 +35,18 @@ const defaultPoints = [
     title: 'Dedicated Human Support',
     desc: 'Reach our studio concierge 7 days a week for honest guidance.',
   },
-]
+])
 
 const trustPoints = computed(() => {
   const custom = settingsStore.publicSettings?.trust_points
   if (Array.isArray(custom) && custom.length > 0) {
     return custom.map((pt, idx) => ({
-      icon: typeof pt.icon === 'string' ? iconMap[pt.icon] || defaultPoints[idx % 4].icon : pt.icon || defaultPoints[idx % 4].icon,
-      title: pt.title || defaultPoints[idx % 4].title,
-      desc: pt.desc || pt.description || defaultPoints[idx % 4].desc,
+      icon: typeof pt.icon === 'string' ? iconMap[pt.icon] || defaultPoints.value[idx % 4].icon : pt.icon || defaultPoints.value[idx % 4].icon,
+      title: pt.title || defaultPoints.value[idx % 4].title,
+      desc: pt.desc || pt.description || defaultPoints.value[idx % 4].desc,
     }))
   }
-  return defaultPoints
+  return defaultPoints.value
 })
 </script>
 

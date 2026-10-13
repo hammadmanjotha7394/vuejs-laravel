@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useHead } from '@unhead/vue'
 import axios from 'axios'
@@ -27,17 +27,19 @@ const menuStore = useMenuStore()
 const toastStore = useToastStore()
 
 useHead({
-  title: `${settingsStore.siteName} — Thoughtfully Crafted Goods`,
+  title: computed(() => `${settingsStore.siteName} — ${settingsStore.siteTagline || 'Thoughtfully Crafted Goods'}`),
   meta: [
     {
       name: 'description',
-      content:
-        'Conscious apparel, tactile homeware, and everyday accessories made in European and Japanese artisan workshops.',
+      content: computed(() => settingsStore.publicSettings?.seo?.description || 'Conscious apparel, tactile homeware, and everyday accessories made in European and Japanese artisan workshops.'),
     },
-    { property: 'og:title', content: `${settingsStore.siteName} — Thoughtfully Crafted Goods` },
+    {
+      property: 'og:title',
+      content: computed(() => `${settingsStore.siteName} — ${settingsStore.siteTagline || 'Thoughtfully Crafted Goods'}`),
+    },
     {
       property: 'og:description',
-      content: 'Minimalist apparel and everyday homeware designed to outlast fleeting trends.',
+      content: computed(() => settingsStore.publicSettings?.seo?.description || 'Minimalist apparel and everyday homeware designed to outlast fleeting trends.'),
     },
   ],
 })

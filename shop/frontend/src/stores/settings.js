@@ -1,6 +1,43 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
 
+function applyBrandTheme(hex) {
+  if (!hex || typeof hex !== 'string') return
+  const color = hex.trim()
+  if (!color.startsWith('#')) {
+    document.documentElement.style.setProperty('--brand', color)
+    return
+  }
+
+  try {
+    let clean = color.replace('#', '')
+    if (clean.length === 3) {
+      clean = clean.split('').map((c) => c + c).join('')
+    }
+    if (clean.length === 6) {
+      const num = parseInt(clean, 16)
+      const r = (num >> 16) & 255
+      const g = (num >> 8) & 255
+      const b = num & 255
+
+      // Calculate hover (darken by ~12%)
+      const darken = (c) => Math.max(0, Math.floor(c * 0.88))
+      const hoverHex = `#${((1 << 24) + (darken(r) << 16) + (darken(g) << 8) + darken(b)).toString(16).slice(1)}`
+
+      // Light tint with 8% opacity
+      const lightTint = `rgba(${r}, ${g}, ${b}, 0.08)`
+
+      document.documentElement.style.setProperty('--brand', color)
+      document.documentElement.style.setProperty('--brand-hover', hoverHex)
+      document.documentElement.style.setProperty('--brand-light', lightTint)
+      return
+    }
+  } catch (e) {
+    // fallback
+  }
+  document.documentElement.style.setProperty('--brand', color)
+}
+
 export const useSettingsStore = defineStore('settings', {
   state: () => ({
     publicSettings: null,
@@ -10,14 +47,31 @@ export const useSettingsStore = defineStore('settings', {
   }),
 
   getters: {
+    general: (state) => state.publicSettings?.general || {},
     brandColor: (state) => state.publicSettings?.general?.brand_color || '#2F5D50',
     siteName: (state) => state.publicSettings?.general?.site_name || 'Boutique',
+    siteTagline: (state) => state.publicSettings?.general?.site_tagline || 'Thoughtfully crafted essentials',
     logoUrl: (state) => state.publicSettings?.general?.logo_url || null,
+    faviconUrl: (state) => state.publicSettings?.general?.favicon_url || null,
     currencySymbol: (state) => state.publicSettings?.general?.currency_symbol || '$',
     currencyCode: (state) => state.publicSettings?.general?.currency_code || 'USD',
+    supportEmail: (state) => state.publicSettings?.general?.support_email || '',
+    supportPhone: (state) => state.publicSettings?.general?.support_phone || '',
+    storeAddress: (state) => state.publicSettings?.general?.store_address || '',
     announcement: (state) => state.publicSettings?.announcement || null,
-    socialLinks: (state) => state.publicSettings?.social_links || {},
-    headerFooter: (state) => state.publicSettings?.header_footer || {},
+    socialLinks: (state) => state.publicSettings?.social || state.publicSettings?.social_links || {},
+    headerFooter: (state) => {
+      const f = state.publicSettings?.footer || {}
+      const hf = state.publicSettings?.header_footer || {}
+      return {
+        copyright_text: f.copyright || hf.copyright_text || '',
+        footer_text: f.tagline || hf.footer_text || state.publicSettings?.general?.site_tagline || '',
+        payment_icons: f.payment_icons_enabled !== undefined ? f.payment_icons_enabled : (hf.payment_icons !== false),
+        columns: f.columns || hf.columns || [],
+      }
+    },
+    freeShippingThreshold: (state) => Number(state.publicSettings?.shipping?.free_shipping_threshold ?? 75.0),
+    defaultShippingFee: (state) => Number(state.publicSettings?.shipping?.default_shipping_fee ?? 8.0),
     maintenanceMode: (state) => Boolean(state.publicSettings?.store?.maintenance_mode),
     maintenanceMessage: (state) =>
       state.publicSettings?.store?.maintenance_message ||
@@ -36,12 +90,9 @@ export const useSettingsStore = defineStore('settings', {
         const response = await axios.get('/api/public-settings')
         this.publicSettings = response.data.data
 
-        // Dynamically apply brand color CSS variable
+        // Dynamically apply brand color and shades
         if (this.publicSettings?.general?.brand_color) {
-          document.documentElement.style.setProperty(
-            '--brand',
-            this.publicSettings.general.brand_color
-          )
+          applyBrandTheme(this.publicSettings.general.brand_color)
         }
 
         // Dynamically update favicon if available
@@ -79,7 +130,7 @@ export const useSettingsStore = defineStore('settings', {
       this.adminSettings = response.data.data
 
       if (payload.brand_color) {
-        document.documentElement.style.setProperty('--brand', payload.brand_color)
+        applyBrandTheme(payload.brand_color)
       }
 
       await this.fetchPublicSettings()

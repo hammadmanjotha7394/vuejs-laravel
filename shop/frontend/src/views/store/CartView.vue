@@ -127,7 +127,7 @@ useHead({
               </span>
               <span v-else class="text-ink flex items-center gap-1.5">
                 <Truck class="w-4 h-4 text-brand" />
-                <span>Add <strong>${{ cartStore.shipping.amount_needed.toFixed(2) }}</strong> more to unlock Free Standard Shipping</span>
+                <span>Add <strong>{{ settingsStore.currencySymbol }}{{ cartStore.shipping.amount_needed.toFixed(2) }}</strong> more to unlock Free Standard Shipping</span>
               </span>
               <span class="font-mono text-xs text-ink-muted">
                 {{ cartStore.shipping.progress_percentage }}%
@@ -348,7 +348,7 @@ useHead({
                     <span class="font-medium text-ink">{{ rate.name }}</span>
                   </div>
                   <span class="font-mono font-bold" :class="rate.is_free ? 'text-emerald-700' : 'text-ink'">
-                    {{ rate.is_free ? 'Free' : `$${Number(rate.cost).toFixed(2)}` }}
+                    {{ rate.is_free ? 'Free' : settingsStore.formatPrice(rate.cost) }}
                   </span>
                 </label>
               </div>
@@ -358,24 +358,24 @@ useHead({
             <div class="space-y-2.5 text-xs border-t border-line pt-4">
               <div class="flex items-center justify-between text-ink-muted">
                 <span>Subtotal</span>
-                <span class="font-mono text-ink font-semibold">${{ cartStore.subtotal.toFixed(2) }}</span>
+                <span class="font-mono text-ink font-semibold">{{ settingsStore.formatPrice(cartStore.subtotal) }}</span>
               </div>
 
               <div v-if="cartStore.discount > 0" class="flex items-center justify-between text-emerald-700">
                 <span>Promotional Discount</span>
-                <span class="font-mono font-semibold">-${{ cartStore.discount.toFixed(2) }}</span>
+                <span class="font-mono font-semibold">-{{ settingsStore.formatPrice(cartStore.discount) }}</span>
               </div>
 
               <div class="flex items-center justify-between text-ink-muted">
                 <span>Estimated Shipping</span>
                 <span class="font-mono font-semibold">
-                  {{ estimatedShippingCost === 0 ? 'Free' : `$${estimatedShippingCost.toFixed(2)}` }}
+                  {{ estimatedShippingCost === 0 ? 'Free' : settingsStore.formatPrice(estimatedShippingCost) }}
                 </span>
               </div>
 
               <div class="pt-3 border-t border-line flex items-center justify-between text-base font-extrabold text-ink">
                 <span>Estimated Total</span>
-                <span class="font-mono text-xl">${{ estimatedOrderTotal.toFixed(2) }}</span>
+                <span class="font-mono text-xl">{{ settingsStore.formatPrice(estimatedOrderTotal) }}</span>
               </div>
             </div>
 

@@ -161,7 +161,7 @@ const activeFilterChips = computed(() => {
   if (filters.value.price_min || filters.value.price_max) {
     chips.push({
       key: 'price',
-      label: `Price: $${filters.value.price_min || 0} – $${filters.value.price_max || facets.value.price_range?.max || 350}`,
+      label: `Price: ${settingsStore.currencySymbol}${filters.value.price_min || 0} – ${settingsStore.currencySymbol}${filters.value.price_max || facets.value.price_range?.max || 350}`,
     })
   }
   if (filters.value.in_stock) {
