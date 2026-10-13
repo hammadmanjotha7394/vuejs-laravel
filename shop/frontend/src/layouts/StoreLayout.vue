@@ -15,6 +15,7 @@ import PopupManager from '@/components/store/PopupManager.vue'
 import MaintenanceOverlay from '@/components/store/MaintenanceOverlay.vue'
 import CartDrawer from '@/components/store/CartDrawer.vue'
 import LiveChatWidget from '@/components/store/LiveChatWidget.vue'
+import CookieConsentBanner from '@/components/store/CookieConsentBanner.vue'
 
 const settingsStore = useSettingsStore()
 const menuStore = useMenuStore()
@@ -98,6 +99,9 @@ onMounted(() => {
 
     <!-- Visitor Live Chat Floating Widget -->
     <LiveChatWidget />
+
+    <!-- Cookie Consent Notice Banner -->
+    <CookieConsentBanner />
 
     <!-- Global Floating Toast Notification Stack -->
     <ToastContainer />

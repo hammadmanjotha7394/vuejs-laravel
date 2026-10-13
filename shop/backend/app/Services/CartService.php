@@ -173,6 +173,7 @@ class CartService
         }
 
         $subtotal = round($subtotal, 2);
+        $totalItemCount = (int) array_sum(array_column($formattedItems, 'quantity'));
 
         // 5. Validate Coupon
         $couponData = null;
@@ -185,7 +186,7 @@ class CartService
                 $cart->save();
                 $notices[] = "Applied coupon '{$cart->coupon_code}' is no longer valid.";
             } else {
-                $errorMsg = $coupon->getValidationErrorMessage($subtotal, $user?->id);
+                $errorMsg = $coupon->getValidationErrorMessage($subtotal, $user?->id, $totalItemCount);
                 if ($errorMsg) {
                     $cart->coupon_code = null;
                     $cart->save();
@@ -196,6 +197,7 @@ class CartService
                         'code' => $coupon->code,
                         'type' => $coupon->type,
                         'value' => (float) $coupon->value,
+                        'min_qty' => $coupon->min_qty,
                         'discount_amount' => $discountAmount,
                     ];
                 }
@@ -204,11 +206,13 @@ class CartService
 
         // 6. Free Shipping Progress
         $freeShippingThreshold = (float) SettingService::get('free_shipping_threshold', 75.00);
-        $isFreeShipping = $subtotal >= $freeShippingThreshold;
-        $amountNeededForFreeShipping = max(0, round($freeShippingThreshold - $subtotal, 2));
-        $shippingProgressPercentage = $freeShippingThreshold > 0
-            ? min(100, (int) round(($subtotal / $freeShippingThreshold) * 100))
-            : 100;
+        $isFreeShipping = $subtotal >= $freeShippingThreshold || ($couponData && $couponData['type'] === 'free_shipping');
+        $amountNeededForFreeShipping = $isFreeShipping ? 0 : max(0, round($freeShippingThreshold - $subtotal, 2));
+        $shippingProgressPercentage = $isFreeShipping
+            ? 100
+            : ($freeShippingThreshold > 0
+                ? min(100, (int) round(($subtotal / $freeShippingThreshold) * 100))
+                : 100);
 
         // 7. Active Shipping Rates
         $rates = ShippingRate::where('is_active', true)->orderBy('rate')->get()->map(function ($r) use ($subtotal, $isFreeShipping) {
@@ -362,14 +366,16 @@ class CartService
             ]);
         }
 
-        // Calculate current subtotal
+        // Calculate current subtotal and item count
         $subtotal = 0.0;
+        $totalQty = 0;
         foreach ($cart->items as $item) {
             $price = $item->variant ? (float) $item->variant->price : (float) $item->product?->base_price;
             $subtotal += $price * $item->quantity;
+            $totalQty += (int) $item->quantity;
         }
 
-        $error = $coupon->getValidationErrorMessage($subtotal, $user?->id);
+        $error = $coupon->getValidationErrorMessage($subtotal, $user?->id, $totalQty);
         if ($error) {
             throw ValidationException::withMessages([
                 'coupon' => [$error],

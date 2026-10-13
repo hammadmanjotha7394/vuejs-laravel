@@ -313,6 +313,27 @@ const shareProduct = async () => {
   }
 }
 
+const notifyEmail = ref('')
+const notifySubmitted = ref(false)
+const notifyLoading = ref(false)
+
+const subscribeBackInStock = async () => {
+  if (!notifyEmail.value.trim() || !product.value) return
+  notifyLoading.value = true
+  try {
+    await apiClient.post(`/products/${product.value.id}/back-in-stock`, {
+      email: notifyEmail.value.trim(),
+      variant_id: selectedVariant.value?.id || null,
+    })
+    notifySubmitted.value = true
+    toastStore.addToast('We will email you as soon as this item returns in stock.', 'success')
+  } catch (e) {
+    toastStore.addToast('Please enter a valid email address.', 'error')
+  } finally {
+    notifyLoading.value = false
+  }
+}
+
 // Scroll to reviews section smoothly
 const scrollToReviews = () => {
   const el = document.getElementById('reviews-section')
@@ -772,6 +793,35 @@ useHead({
               >
                 <Share2 class="w-4 h-4" />
               </button>
+            </div>
+
+            <!-- Back-in-Stock Notify Me Box (shown when out of stock) -->
+            <div
+              v-if="!inStock"
+              class="p-4 rounded-2xl bg-surface border border-line space-y-2.5 mt-3"
+            >
+              <p class="text-xs font-semibold text-ink">
+                Notify me when back in stock
+              </p>
+              <p v-if="notifySubmitted" class="text-xs text-emerald-700 font-medium">
+                You're on the waitlist! We'll email you the moment this piece returns.
+              </p>
+              <form v-else class="flex items-center gap-2" @submit.prevent="subscribeBackInStock">
+                <input
+                  v-model="notifyEmail"
+                  type="email"
+                  required
+                  placeholder="Enter your email address..."
+                  class="flex-1 px-3.5 py-2 text-xs bg-white border border-line rounded-pill focus:outline-none focus:border-ink"
+                />
+                <button
+                  type="submit"
+                  :disabled="notifyLoading"
+                  class="px-4 py-2 rounded-pill bg-ink text-white text-xs font-semibold hover:opacity-90 disabled:opacity-50"
+                >
+                  {{ notifyLoading ? 'Saving...' : 'Notify Me' }}
+                </button>
+              </form>
             </div>
           </div>
 

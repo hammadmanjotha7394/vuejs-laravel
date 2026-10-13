@@ -546,5 +546,29 @@ onMounted(() => {
         </template>
       </DataTable>
     </div>
+
+    <!-- Database & Uploads Backup Reminder Card (Super Admin) -->
+    <div
+      v-if="authStore.user?.roles?.some((r) => (typeof r === 'string' ? r === 'super_admin' : r.name === 'super_admin'))"
+      class="bg-white rounded-card border border-line p-5 shadow-card flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+    >
+      <div class="space-y-1">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+          <h3 class="text-sm font-bold text-ink">Database & Uploads Backup Reminder</h3>
+        </div>
+        <p class="text-xs text-ink-muted max-w-2xl">
+          Download a complete SQL snapshot of your store database before applying major updates or price changes, and keep weekly backups of <code class="font-mono text-[11px]">storage/app/public</code> via Hostinger hPanel Backups.
+        </p>
+      </div>
+      <a
+        href="/api/admin/system/backup-db"
+        target="_blank"
+        class="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-pill bg-ink text-white text-xs font-semibold hover:bg-brand transition"
+      >
+        <span>Export Database (.SQL)</span>
+        <ArrowRight class="w-3.5 h-3.5" />
+      </a>
+    </div>
   </div>
 </template>

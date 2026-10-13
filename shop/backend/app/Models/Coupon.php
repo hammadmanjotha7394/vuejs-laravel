@@ -14,6 +14,7 @@ class Coupon extends Model
         'type',
         'value',
         'min_subtotal',
+        'min_qty',
         'max_uses',
         'used_count',
         'per_user_limit',
@@ -27,6 +28,7 @@ class Coupon extends Model
         return [
             'value' => 'decimal:2',
             'min_subtotal' => 'decimal:2',
+            'min_qty' => 'integer',
             'used_count' => 'integer',
             'max_uses' => 'integer',
             'per_user_limit' => 'integer',
@@ -36,12 +38,12 @@ class Coupon extends Model
         ];
     }
 
-    public function isValid(float $subtotal = 0): bool
+    public function isValid(float $subtotal = 0, ?int $userId = null, int $itemCount = 1): bool
     {
-        return $this->getValidationErrorMessage($subtotal) === null;
+        return $this->getValidationErrorMessage($subtotal, $userId, $itemCount) === null;
     }
 
-    public function getValidationErrorMessage(float $subtotal = 0, ?int $userId = null): ?string
+    public function getValidationErrorMessage(float $subtotal = 0, ?int $userId = null, int $itemCount = 1): ?string
     {
         if (! $this->is_active) {
             return 'This coupon is inactive.';
@@ -64,6 +66,10 @@ class Coupon extends Model
             return 'A minimum cart subtotal of $'.number_format((float) $this->min_subtotal, 2).' is required for this coupon.';
         }
 
+        if ($this->min_qty && $itemCount < (int) $this->min_qty) {
+            return "Add at least {$this->min_qty} items to your bag to use coupon {$this->code}.";
+        }
+
         if ($userId && $this->per_user_limit) {
             $userUses = Order::where('user_id', $userId)
                 ->where('coupon_code', $this->code)
@@ -80,6 +86,10 @@ class Coupon extends Model
 
     public function calculateDiscount(float $subtotal): float
     {
+        if ($this->type === 'free_shipping') {
+            return 0.00;
+        }
+
         if ($this->type === 'percent') {
             $discount = ($subtotal * (float) $this->value) / 100;
         } else {

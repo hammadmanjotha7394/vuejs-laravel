@@ -72,6 +72,16 @@ const routes = [
         component: PageView,
       },
       {
+        path: 'track-order',
+        name: 'order.track',
+        component: () => import('@/views/store/TrackOrderView.vue'),
+      },
+      {
+        path: 'contact',
+        name: 'contact',
+        component: () => import('@/views/store/ContactView.vue'),
+      },
+      {
         path: 'cart',
         name: 'cart',
         component: CartView,
@@ -217,12 +227,8 @@ const routes = [
       {
         path: 'brands',
         name: 'admin.brands',
-        component: () => import('@/views/admin/AdminModulePlaceholderView.vue'),
-        meta: {
-          permission: 'brands.manage',
-          title: 'Brands & Labels',
-          description: 'Manage product brands, logos, and brand landing descriptions.',
-        },
+        component: () => import('@/views/admin/BrandsView.vue'),
+        meta: { permission: 'brands.manage' },
       },
       {
         path: 'customers',
@@ -239,12 +245,8 @@ const routes = [
       {
         path: 'coupons',
         name: 'admin.coupons',
-        component: () => import('@/views/admin/AdminModulePlaceholderView.vue'),
-        meta: {
-          permission: 'coupons.manage',
-          title: 'Coupons & Discounts',
-          description: 'Create and manage promo codes, percentage/fixed discounts, and minimum order rules.',
-        },
+        component: () => import('@/views/admin/CouponsView.vue'),
+        meta: { permission: 'coupons.manage' },
       },
       {
         path: 'chat',
@@ -302,12 +304,8 @@ const routes = [
       {
         path: 'activity-log',
         name: 'admin.activity-log',
-        component: () => import('@/views/admin/AdminModulePlaceholderView.vue'),
-        meta: {
-          permission: 'activity.view',
-          title: 'System Activity Log',
-          description: 'Audit trail of administrative actions, actor users, timestamps, and IP addresses.',
-        },
+        component: () => import('@/views/admin/ActivityLogView.vue'),
+        meta: { permission: 'activity.view' },
       },
     ],
   },

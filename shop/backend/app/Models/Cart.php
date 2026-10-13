@@ -14,8 +14,17 @@ class Cart extends Model
     protected $fillable = [
         'token',
         'user_id',
+        'guest_email',
         'coupon_code',
+        'abandoned_reminder_sent_at',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'abandoned_reminder_sent_at' => 'datetime',
+        ];
+    }
 
     public function user(): BelongsTo
     {

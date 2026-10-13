@@ -255,6 +255,29 @@ const handleLogout = async () => {
   router.push('/login')
 }
 
+const quickSearchProducts = ref([])
+const quickSearchOrders = ref([])
+let quickSearchTimer = null
+
+watch(searchQuery, (val) => {
+  if (quickSearchTimer) clearTimeout(quickSearchTimer)
+  const q = val.trim()
+  if (q.length < 2) {
+    quickSearchProducts.value = []
+    quickSearchOrders.value = []
+    return
+  }
+  quickSearchTimer = setTimeout(async () => {
+    try {
+      const res = await apiClient.get('/admin/quick-search', { params: { q } })
+      quickSearchProducts.value = res.data?.products || []
+      quickSearchOrders.value = res.data?.orders || []
+    } catch (e) {
+      // Ignore
+    }
+  }, 200)
+})
+
 const navigateFromSearch = (to) => {
   searchDropdownOpen.value = false
   searchQuery.value = ''
@@ -539,6 +562,38 @@ onBeforeUnmount(() => {
                 <span class="font-semibold">{{ item.label }}</span>
                 <span class="ml-auto text-[10px] font-mono text-ink-muted">{{ item.to }}</span>
               </button>
+
+              <template v-if="quickSearchProducts.length">
+                <div class="px-3 pt-2.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-ink-muted border-t border-line mt-1">
+                  Products
+                </div>
+                <button
+                  v-for="prod in quickSearchProducts"
+                  :key="'qp-' + prod.id"
+                  type="button"
+                  @click="navigateFromSearch(`/admin/products/${prod.id}/edit`)"
+                  class="w-full px-3.5 py-2 text-left text-xs flex items-center justify-between text-ink hover:bg-surface transition"
+                >
+                  <span class="font-medium truncate">{{ prod.name }}</span>
+                  <span class="text-[10px] font-mono text-ink-muted ml-2">{{ prod.sku }}</span>
+                </button>
+              </template>
+
+              <template v-if="quickSearchOrders.length">
+                <div class="px-3 pt-2.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-ink-muted border-t border-line mt-1">
+                  Orders
+                </div>
+                <button
+                  v-for="ord in quickSearchOrders"
+                  :key="'qo-' + ord.id"
+                  type="button"
+                  @click="navigateFromSearch(`/admin/orders/${ord.id}`)"
+                  class="w-full px-3.5 py-2 text-left text-xs flex items-center justify-between text-ink hover:bg-surface transition"
+                >
+                  <span class="font-mono font-semibold">{{ ord.order_number }}</span>
+                  <span class="text-[10px] uppercase text-ink-muted">{{ ord.status }}</span>
+                </button>
+              </template>
             </div>
           </div>
         </div>

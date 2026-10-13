@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Schema;
 
 class Category extends Model
 {
@@ -38,6 +39,23 @@ class Category extends Model
 
     protected static function booted(): void
     {
+        static::updating(function (Category $category) {
+            if ($category->isDirty('slug') && ! empty($category->getOriginal('slug'))) {
+                $oldSlug = $category->getOriginal('slug');
+                $newSlug = $category->slug;
+                if ($oldSlug !== $newSlug && Schema::hasTable('url_redirects')) {
+                    UrlRedirect::updateOrCreate(
+                        ['source_path' => '/category/'.$oldSlug],
+                        [
+                            'target_path' => '/category/'.$newSlug,
+                            'status_code' => 301,
+                            'is_active' => true,
+                        ]
+                    );
+                }
+            }
+        });
+
         static::saved(function () {
             CategoryService::clearCache();
         });

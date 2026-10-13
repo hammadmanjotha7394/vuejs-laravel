@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ChatController as AdminChatController;
+use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\EmailTemplateController;
@@ -14,6 +16,7 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\SystemAndExtrasController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CartController;
@@ -25,6 +28,7 @@ use App\Http\Controllers\Api\PublicMarketingController;
 use App\Http\Controllers\Api\PublicMenuController;
 use App\Http\Controllers\Api\PublicProductController;
 use App\Http\Controllers\Api\PublicSettingController;
+use App\Http\Controllers\Api\StorefrontExtrasController;
 use App\Http\Controllers\Api\StripeWebhookController;
 use App\Http\Controllers\Api\WishlistController;
 use Illuminate\Support\Facades\Route;
@@ -62,7 +66,11 @@ Route::post('/popups/{popup}/track', [PublicMarketingController::class, 'trackPo
 Route::get('/pages', [PublicMarketingController::class, 'pages']);
 Route::get('/pages/{slug}', [PublicMarketingController::class, 'pageShow']);
 Route::get('/reviews/featured', [PublicMarketingController::class, 'featuredReviews']);
-Route::post('/newsletter/subscribe', [PublicMarketingController::class, 'subscribe']);
+Route::post('/newsletter/subscribe', [PublicMarketingController::class, 'subscribe'])->middleware('throttle:15,1');
+Route::post('/newsletter/unsubscribe', [StorefrontExtrasController::class, 'unsubscribeNewsletter'])->middleware('throttle:15,1');
+Route::post('/contact', [StorefrontExtrasController::class, 'submitContact'])->middleware('throttle:10,1');
+Route::post('/products/{product}/back-in-stock', [StorefrontExtrasController::class, 'subscribeBackInStock'])->middleware('throttle:15,1');
+Route::post('/orders/track', [StorefrontExtrasController::class, 'trackOrder'])->middleware('throttle:20,1');
 
 // Live Chat Visitor Endpoints (Gentle Polling without WebSockets)
 Route::get('/chat/messages', [PublicChatController::class, 'index'])->middleware('throttle:90,1');
@@ -88,14 +96,14 @@ Route::delete('/wishlist/{productId}', [WishlistController::class, 'destroy']);
 
 // Checkout & Stripe Webhook Routes
 Route::get('/checkout/addresses', [CheckoutController::class, 'addresses']);
-Route::post('/checkout', [CheckoutController::class, 'store']);
+Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:15,1');
 Route::get('/checkout/verify', [CheckoutController::class, 'verify']);
 Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle']);
 
 // Guest Auth Routes
-Route::post('/register', [AuthController::class, 'register']);
+Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:10,1');
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
-Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:5,1');
 
 // Authenticated User Routes (Customers & Staff)
 Route::middleware('auth:sanctum')->group(function () {
@@ -265,5 +273,37 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/email-templates/{emailTemplate}/test', [EmailTemplateController::class, 'sendTest'])->middleware('permission:mail.manage');
         Route::get('/email-logs', [EmailTemplateController::class, 'logs'])->middleware('permission:mail.manage|settings.view');
         Route::post('/email-logs/{emailLog}/resend', [EmailTemplateController::class, 'resendLog'])->middleware('permission:mail.manage');
+
+        // Brands & Labels CRUD
+        Route::get('/brands-manage', [BrandController::class, 'index'])->middleware('permission:brands.manage|products.view');
+        Route::post('/brands-manage', [BrandController::class, 'store'])->middleware('permission:brands.manage');
+        Route::put('/brands-manage/{brand}', [BrandController::class, 'update'])->middleware('permission:brands.manage');
+        Route::delete('/brands-manage/{brand}', [BrandController::class, 'destroy'])->middleware('permission:brands.manage');
+
+        // Coupons & Discounts CRUD (Percent, Fixed, Free Shipping, Buy X get Y%)
+        Route::get('/coupons', [CouponController::class, 'index'])->middleware('permission:coupons.manage');
+        Route::post('/coupons', [CouponController::class, 'store'])->middleware('permission:coupons.manage');
+        Route::put('/coupons/{coupon}', [CouponController::class, 'update'])->middleware('permission:coupons.manage');
+        Route::delete('/coupons/{coupon}', [CouponController::class, 'destroy'])->middleware('permission:coupons.manage');
+
+        // Activity Log Viewer, Quick Command Palette Search & One-Click DB Backup
+        Route::get('/activity-logs', [SystemAndExtrasController::class, 'activityLogs'])->middleware('permission:activity.view');
+        Route::get('/quick-search', [SystemAndExtrasController::class, 'quickSearch']);
+        Route::get('/system/backup-db', [SystemAndExtrasController::class, 'exportDatabaseBackup'])->middleware('role:super_admin');
+
+        // Newsletter Admin List & CSV Export
+        Route::get('/newsletter', [SystemAndExtrasController::class, 'newsletterIndex'])->middleware('permission:popups.manage|settings.view');
+        Route::get('/newsletter/export-csv', [SystemAndExtrasController::class, 'newsletterExportCsv'])->middleware('permission:popups.manage|settings.view');
+        Route::delete('/newsletter/{subscriber}', [SystemAndExtrasController::class, 'newsletterDestroy'])->middleware('permission:popups.manage|settings.update');
+
+        // Contact Form Messages Inbox
+        Route::get('/contact-messages', [SystemAndExtrasController::class, 'contactMessagesIndex'])->middleware('permission:chat.manage|settings.view');
+        Route::patch('/contact-messages/{contactMessage}', [SystemAndExtrasController::class, 'contactMessageUpdate'])->middleware('permission:chat.manage|settings.update');
+        Route::delete('/contact-messages/{contactMessage}', [SystemAndExtrasController::class, 'contactMessageDestroy'])->middleware('permission:chat.manage|settings.update');
+
+        // 301 URL Redirect Manager
+        Route::get('/redirects', [SystemAndExtrasController::class, 'redirectsIndex'])->middleware('permission:settings.view|pages.manage');
+        Route::post('/redirects', [SystemAndExtrasController::class, 'redirectsStore'])->middleware('permission:settings.update|pages.manage');
+        Route::delete('/redirects/{redirect}', [SystemAndExtrasController::class, 'redirectsDestroy'])->middleware('permission:settings.update|pages.manage');
     });
 });
