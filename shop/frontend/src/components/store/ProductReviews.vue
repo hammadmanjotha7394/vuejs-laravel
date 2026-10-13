@@ -284,7 +284,7 @@ const voteHelpful = async (review) => {
         :key="'review-' + rev.id"
         class="bg-white border border-line rounded-card p-6 shadow-xs space-y-3"
       >
-        <!-- Top row: Stars + Date -->
+        <!-- Top row: Stars -->
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-1 text-amber-400">
             <Star
@@ -293,9 +293,6 @@ const voteHelpful = async (review) => {
               class="w-3.5 h-3.5 fill-current"
             />
           </div>
-          <span class="text-[11px] text-ink-muted">
-            {{ rev.review_date }}
-          </span>
         </div>
 
         <!-- Title & Body -->
@@ -328,7 +325,6 @@ const voteHelpful = async (review) => {
         >
           <div class="flex items-center justify-between">
             <span class="font-bold text-ink">Response from {{ settingsStore.siteName || 'Our Studio' }}</span>
-            <span v-if="rev.admin_replied_at" class="text-[10px] text-ink-muted">{{ rev.admin_replied_at }}</span>
           </div>
           <p class="text-ink-muted leading-relaxed">{{ rev.admin_reply }}</p>
         </div>

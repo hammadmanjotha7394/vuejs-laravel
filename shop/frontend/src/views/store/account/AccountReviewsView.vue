@@ -92,7 +92,6 @@ onMounted(() => {
                 {{ review.product.name }}
               </RouterLink>
               <p v-else class="text-sm font-bold text-ink">Product</p>
-              <p class="text-[11px] text-ink-muted">Reviewed on {{ review.review_date }}</p>
             </div>
           </div>
 
