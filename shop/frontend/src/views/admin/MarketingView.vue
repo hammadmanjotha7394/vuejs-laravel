@@ -73,7 +73,7 @@ const heroForm = reactive({
   image_desktop: '',
   image_mobile: '',
   text_position: 'left',
-  overlay_opacity: 0.25,
+  overlay_opacity: 0.55,
   starts_at: '',
   ends_at: '',
   is_active: true,
@@ -84,7 +84,10 @@ const fetchHeroSlides = async () => {
   isLoadingHero.value = true
   try {
     const res = await apiClient.get('/admin/hero-slides')
-    heroSlides.value = res.data.data || []
+    heroSlides.value = (res.data.data || []).map((s) => ({
+      ...s,
+      overlay_opacity: Number(s.overlay_opacity ?? 0.55),
+    }))
   } catch (err) {
     errorMessage.value = err.response?.data?.message || 'Unable to load hero slides.'
   } finally {
@@ -101,7 +104,7 @@ const openCreateHero = () => {
   heroForm.image_desktop = 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1600&q=80'
   heroForm.image_mobile = ''
   heroForm.text_position = 'left'
-  heroForm.overlay_opacity = 0.25
+  heroForm.overlay_opacity = 0.55
   heroForm.starts_at = ''
   heroForm.ends_at = ''
   heroForm.is_active = true
@@ -117,7 +120,7 @@ const openEditHero = (slide) => {
   heroForm.image_desktop = slide.image_desktop || ''
   heroForm.image_mobile = slide.image_mobile || ''
   heroForm.text_position = slide.text_position || 'left'
-  heroForm.overlay_opacity = Number(slide.overlay_opacity ?? 0.25)
+  heroForm.overlay_opacity = Number(slide.overlay_opacity ?? 0.55)
   heroForm.starts_at = slide.starts_at ? slide.starts_at.slice(0, 16) : ''
   heroForm.ends_at = slide.ends_at ? slide.ends_at.slice(0, 16) : ''
   heroForm.is_active = Boolean(slide.is_active)
@@ -185,6 +188,19 @@ const saveHeroSlide = async () => {
     errorMessage.value = err.response?.data?.message || 'Failed to save hero slide.'
   } finally {
     isSavingHero.value = false
+  }
+}
+
+const updateSlideOpacity = async (slide, newOpacity) => {
+  const val = Number(Number(newOpacity).toFixed(2))
+  slide.overlay_opacity = val
+  try {
+    await apiClient.put(`/admin/hero-slides/${slide.id}`, {
+      overlay_opacity: val,
+    })
+    showToast(`Black layer opacity for "${slide.title}" set to ${Math.round(val * 100)}%.`)
+  } catch (err) {
+    errorMessage.value = err.response?.data?.message || 'Could not update overlay opacity.'
   }
 }
 
@@ -704,17 +720,38 @@ onMounted(() => {
 
               <div>
                 <div class="flex justify-between text-xs font-semibold text-ink mb-1.5">
-                  <span>Overlay Opacity</span>
-                  <span class="font-mono">{{ Math.round(heroForm.overlay_opacity * 100) }}%</span>
+                  <span>Black Layer Opacity</span>
+                  <span class="font-mono text-brand">{{ Math.round(heroForm.overlay_opacity * 100) }}%</span>
                 </div>
                 <input
                   v-model.number="heroForm.overlay_opacity"
                   type="range"
                   min="0"
-                  max="0.85"
+                  max="0.95"
                   step="0.05"
                   class="w-full accent-brand"
                 />
+                <div class="flex items-center gap-1 mt-1.5">
+                  <button
+                    v-for="preset in [
+                      { label: '25% Light', val: 0.25 },
+                      { label: '55% Medium', val: 0.55 },
+                      { label: '70% Dark', val: 0.7 },
+                      { label: '85% Max', val: 0.85 },
+                    ]"
+                    :key="preset.val"
+                    type="button"
+                    @click="heroForm.overlay_opacity = preset.val"
+                    class="flex-1 py-1 px-1.5 rounded text-[10px] font-semibold border transition"
+                    :class="
+                      Math.abs(heroForm.overlay_opacity - preset.val) < 0.03
+                        ? 'bg-brand text-white border-brand'
+                        : 'bg-surface text-ink-muted border-line hover:text-ink'
+                    "
+                  >
+                    {{ preset.label }}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -782,7 +819,7 @@ onMounted(() => {
             </div>
 
             <div
-              class="relative rounded-card overflow-hidden border border-line shadow-soft transition-all mx-auto flex items-center"
+              class="relative rounded-card overflow-hidden border border-line shadow-soft transition-all mx-auto flex items-center bg-gray-950"
               :class="heroPreviewMode === 'mobile' ? 'max-w-[320px] h-[440px]' : 'w-full h-[360px]'"
             >
               <img
@@ -804,10 +841,17 @@ onMounted(() => {
                 }"
               >
                 <div class="max-w-md space-y-3">
-                  <h4 class="text-xl sm:text-2xl font-bold tracking-tight leading-tight">
+                  <h4
+                    class="text-xl sm:text-2xl font-bold tracking-tight leading-tight text-white"
+                    style="text-shadow: 0 2px 14px rgba(0, 0, 0, 0.65)"
+                  >
                     {{ heroForm.title || 'Slide Headline' }}
                   </h4>
-                  <p v-if="heroForm.subtitle" class="text-xs sm:text-sm text-white/90 leading-relaxed">
+                  <p
+                    v-if="heroForm.subtitle"
+                    class="text-xs sm:text-sm text-white/95 leading-relaxed"
+                    style="text-shadow: 0 1px 8px rgba(0, 0, 0, 0.75)"
+                  >
                     {{ heroForm.subtitle }}
                   </p>
                   <div v-if="heroForm.button_text" class="pt-1">
@@ -833,7 +877,7 @@ onMounted(() => {
         <div
           v-for="(slide, idx) in heroSlides"
           :key="slide.id"
-          class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-surface/50 transition"
+          class="p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 hover:bg-surface/50 transition"
         >
           <div class="flex items-center gap-4 min-w-0">
             <!-- Reorder Controls -->
@@ -856,12 +900,21 @@ onMounted(() => {
               </button>
             </div>
 
-            <!-- Slide Thumbnail -->
-            <img
-              :src="slide.image_desktop"
-              :alt="slide.title"
-              class="w-24 h-14 rounded-lg object-cover border border-line bg-surface shrink-0"
-            />
+            <!-- Slide Thumbnail with Live Black Overlay Preview -->
+            <div class="relative w-28 h-16 rounded-lg overflow-hidden border border-line bg-gray-900 shrink-0">
+              <img
+                :src="slide.image_desktop"
+                :alt="slide.title"
+                class="w-full h-full object-cover"
+              />
+              <div
+                class="absolute inset-0 bg-black transition-opacity"
+                :style="{ opacity: slide.overlay_opacity ?? 0.55 }"
+              ></div>
+              <span class="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white px-1 text-center truncate">
+                {{ Math.round((slide.overlay_opacity ?? 0.55) * 100) }}% Dark
+              </span>
+            </div>
 
             <div class="min-w-0">
               <div class="flex items-center gap-2">
@@ -877,7 +930,41 @@ onMounted(() => {
             </div>
           </div>
 
-          <div class="flex items-center gap-3 self-end sm:self-center shrink-0">
+          <div class="flex flex-wrap items-center gap-3 self-end lg:self-center shrink-0">
+            <!-- Quick Inline Black Layer Opacity Slider -->
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface border border-line">
+              <span class="text-[11px] font-semibold text-ink-muted whitespace-nowrap">
+                Black Layer:
+                <strong class="text-ink font-mono">{{ Math.round((slide.overlay_opacity ?? 0.55) * 100) }}%</strong>
+              </span>
+              <input
+                :value="slide.overlay_opacity ?? 0.55"
+                type="range"
+                min="0"
+                max="0.95"
+                step="0.05"
+                class="w-24 accent-brand cursor-pointer"
+                @input="(e) => (slide.overlay_opacity = Number(e.target.value))"
+                @change="(e) => updateSlideOpacity(slide, e.target.value)"
+              />
+              <div class="hidden sm:flex items-center gap-1">
+                <button
+                  v-for="p in [0.35, 0.55, 0.75]"
+                  :key="p"
+                  type="button"
+                  @click="updateSlideOpacity(slide, p)"
+                  class="px-1.5 py-0.5 rounded text-[10px] font-semibold border transition"
+                  :class="
+                    Math.abs((slide.overlay_opacity ?? 0.55) - p) < 0.03
+                      ? 'bg-brand text-white border-brand'
+                      : 'bg-page text-ink-muted border-line hover:text-ink'
+                  "
+                >
+                  {{ Math.round(p * 100) }}%
+                </button>
+              </div>
+            </div>
+
             <ToggleSwitch
               :model-value="Boolean(slide.is_active)"
               @update:model-value="(val) => toggleHeroSlideActive(slide, val)"

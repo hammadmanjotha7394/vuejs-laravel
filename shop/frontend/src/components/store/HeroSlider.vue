@@ -23,6 +23,48 @@ const activeSlide = computed(() => {
   return props.slides[currentIndex.value] || props.slides[0]
 })
 
+/**
+ * Compute effective black overlay opacity (0 to 0.95).
+ * Automatically upgrades legacy 0.20 / 0.25 default seed values to 0.55 so white text is always crisp.
+ */
+const getOverlayOpacity = (slide) => {
+  if (!slide || slide.overlay_opacity === undefined || slide.overlay_opacity === null || slide.overlay_opacity === '') {
+    return 0.55
+  }
+  const val = Number(slide.overlay_opacity)
+  if (Number.isNaN(val)) return 0.55
+  // Upgrade old low-contrast seed values (0.20 or 0.25) to 0.55 for clear readability
+  if (val === 0.25 || val === 0.2) {
+    return 0.55
+  }
+  return Math.min(0.95, Math.max(0, val))
+}
+
+/**
+ * Directional dark gradient behind the text area so bright background spots never wash out white typography.
+ */
+const getScrimStyle = (slide) => {
+  const base = getOverlayOpacity(slide)
+  if (base <= 0) return { opacity: 0 }
+  const pos = slide?.text_position || 'left'
+  const strong = Math.min(0.85, base * 0.85 + 0.15).toFixed(2)
+  const mid = Math.min(0.65, base * 0.5).toFixed(2)
+
+  if (pos === 'right') {
+    return {
+      background: `linear-gradient(270deg, rgba(0,0,0,${strong}) 0%, rgba(0,0,0,${mid}) 55%, rgba(0,0,0,0.05) 100%)`,
+    }
+  }
+  if (pos === 'center') {
+    return {
+      background: `radial-gradient(circle at center, rgba(0,0,0,${strong}) 0%, rgba(0,0,0,${mid}) 65%, rgba(0,0,0,0.15) 100%)`,
+    }
+  }
+  return {
+    background: `linear-gradient(90deg, rgba(0,0,0,${strong}) 0%, rgba(0,0,0,${mid}) 55%, rgba(0,0,0,0.05) 100%)`,
+  }
+}
+
 const nextSlide = () => {
   if (!props.slides.length) return
   currentIndex.value = (currentIndex.value + 1) % props.slides.length
@@ -83,7 +125,7 @@ onUnmounted(() => {
 <template>
   <section
     v-if="slides.length > 0"
-    class="relative w-full overflow-hidden bg-surface min-h-[500px] sm:min-h-[580px] lg:min-h-[640px] flex items-center"
+    class="relative w-full overflow-hidden bg-gray-950 min-h-[500px] sm:min-h-[580px] lg:min-h-[640px] flex items-center"
     @mouseenter="isPaused = true"
     @mouseleave="isPaused = false"
     @touchstart="handleTouchStart"
@@ -97,7 +139,7 @@ onUnmounted(() => {
       :key="'slide-' + slide.id"
       class="absolute inset-0 transition-opacity duration-700 ease-in-out"
       :class="index === currentIndex ? 'opacity-100 z-10 pointer-events-auto' : 'opacity-0 z-0 pointer-events-none'"
-      aria-hidden="index !== currentIndex"
+      :aria-hidden="index !== currentIndex"
     >
       <!-- Background Responsive Images -->
       <picture class="absolute inset-0 w-full h-full">
@@ -119,10 +161,16 @@ onUnmounted(() => {
         />
       </picture>
 
-      <!-- Soft Color Overlay with Admin Configurable Opacity -->
+      <!-- Layer 1: Full-Bleed Black Overlay with Admin Configurable Opacity -->
       <div
-        class="absolute inset-0 bg-black"
-        :style="{ opacity: slide.overlay_opacity !== undefined ? slide.overlay_opacity : 0.25 }"
+        class="absolute inset-0 bg-black transition-opacity duration-300"
+        :style="{ opacity: getOverlayOpacity(slide) }"
+      ></div>
+
+      <!-- Layer 2: Directional Dark Scrim Behind Text for Guaranteed Contrast -->
+      <div
+        class="absolute inset-0 pointer-events-none transition-all duration-300"
+        :style="getScrimStyle(slide)"
       ></div>
 
       <!-- Slide Text Content -->
@@ -136,15 +184,19 @@ onUnmounted(() => {
           }"
         >
           <!-- Clean Large Headline -->
-          <h2 class="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] drop-shadow-sm">
+          <h2
+            class="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] text-white"
+            style="text-shadow: 0 2px 18px rgba(0, 0, 0, 0.65), 0 1px 4px rgba(0, 0, 0, 0.5)"
+          >
             {{ slide.title }}
           </h2>
 
           <!-- Subtext (one short line) -->
           <p
             v-if="slide.subtitle"
-            class="text-sm sm:text-base lg:text-lg text-white/90 font-normal leading-relaxed mt-4 max-w-xl drop-shadow-sm"
+            class="text-sm sm:text-base lg:text-lg text-white/95 font-medium leading-relaxed mt-4 max-w-xl"
             :class="{ 'mx-auto': slide.text_position === 'center', 'ml-auto': slide.text_position === 'right' }"
+            style="text-shadow: 0 1px 10px rgba(0, 0, 0, 0.75)"
           >
             {{ slide.subtitle }}
           </p>
@@ -161,7 +213,7 @@ onUnmounted(() => {
           >
             <RouterLink
               :to="slide.button_url || '/shop'"
-              class="px-7 py-3.5 rounded-pill bg-white text-ink text-xs sm:text-sm font-semibold hover:bg-brand hover:text-white transition duration-200 inline-flex items-center gap-2 shadow-lg"
+              class="px-7 py-3.5 rounded-pill bg-white text-ink text-xs sm:text-sm font-semibold hover:bg-brand hover:text-white transition duration-200 inline-flex items-center gap-2 shadow-xl"
             >
               <span>{{ slide.button_text }}</span>
               <ArrowRight class="w-4 h-4" />
@@ -179,7 +231,7 @@ onUnmounted(() => {
       <button
         type="button"
         @click="prevSlide"
-        class="pointer-events-auto w-11 h-11 rounded-full bg-white/80 hover:bg-white text-ink flex items-center justify-center backdrop-blur-md shadow-md hover:scale-105 transition"
+        class="pointer-events-auto w-11 h-11 rounded-full bg-white/85 hover:bg-white text-ink flex items-center justify-center backdrop-blur-md shadow-md hover:scale-105 transition"
         aria-label="Previous slide"
       >
         <ChevronLeft class="w-5 h-5" />
@@ -188,7 +240,7 @@ onUnmounted(() => {
       <button
         type="button"
         @click="nextSlide"
-        class="pointer-events-auto w-11 h-11 rounded-full bg-white/80 hover:bg-white text-ink flex items-center justify-center backdrop-blur-md shadow-md hover:scale-105 transition"
+        class="pointer-events-auto w-11 h-11 rounded-full bg-white/85 hover:bg-white text-ink flex items-center justify-center backdrop-blur-md shadow-md hover:scale-105 transition"
         aria-label="Next slide"
       >
         <ChevronRight class="w-5 h-5" />
@@ -206,7 +258,7 @@ onUnmounted(() => {
         type="button"
         @click="goToSlide(index)"
         class="h-2 rounded-full transition-all duration-300"
-        :class="index === currentIndex ? 'w-8 bg-white' : 'w-2 bg-white/50 hover:bg-white/80'"
+        :class="index === currentIndex ? 'w-8 bg-white shadow' : 'w-2 bg-white/50 hover:bg-white/80'"
         :aria-label="`Go to slide ${index + 1}`"
       ></button>
     </div>

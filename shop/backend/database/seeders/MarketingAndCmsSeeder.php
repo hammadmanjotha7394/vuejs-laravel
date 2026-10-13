@@ -26,7 +26,7 @@ class MarketingAndCmsSeeder extends Seeder
             'image_desktop' => 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1600&q=80',
             'image_mobile' => 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80',
             'text_position' => 'left',
-            'overlay_opacity' => 0.25,
+            'overlay_opacity' => 0.55,
             'sort_order' => 1,
             'is_active' => true,
         ]);
@@ -39,7 +39,7 @@ class MarketingAndCmsSeeder extends Seeder
             'image_desktop' => 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1600&q=80',
             'image_mobile' => 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=800&q=80',
             'text_position' => 'left',
-            'overlay_opacity' => 0.25,
+            'overlay_opacity' => 0.55,
             'sort_order' => 2,
             'is_active' => true,
         ]);
@@ -52,7 +52,7 @@ class MarketingAndCmsSeeder extends Seeder
             'image_desktop' => 'https://images.unsplash.com/photo-1616046229478-9901c5536a45?auto=format&fit=crop&w=1600&q=80',
             'image_mobile' => 'https://images.unsplash.com/photo-1616046229478-9901c5536a45?auto=format&fit=crop&w=800&q=80',
             'text_position' => 'center',
-            'overlay_opacity' => 0.20,
+            'overlay_opacity' => 0.50,
             'sort_order' => 3,
             'is_active' => true,
         ]);
