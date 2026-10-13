@@ -111,7 +111,7 @@ const mainMenuItems = computed(() => {
         <button
           type="button"
           @click="emit('openDrawer')"
-          class="lg:hidden p-2 -ml-2 rounded-lg text-ink hover:text-brand hover:bg-surface transition"
+          class="lg:hidden p-2 rounded-lg text-ink hover:text-brand hover:bg-surface transition"
           aria-label="Open mobile navigation drawer"
         >
           <MenuIcon class="w-5 h-5" />

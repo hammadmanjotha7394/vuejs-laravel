@@ -15,7 +15,7 @@ const props = defineProps({
     class="py-4 border-b border-line mb-8"
     aria-label="Sub-categories"
   >
-    <div class="flex items-center gap-4 sm:gap-6 overflow-x-auto pb-2 snap-x snap-mandatory no-scrollbar">
+    <div class="flex items-center gap-4 sm:gap-6 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x snap-mandatory no-scrollbar">
       <RouterLink
         v-for="sub in subcategories"
         :key="'subcat-' + sub.id"

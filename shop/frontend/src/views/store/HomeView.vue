@@ -115,7 +115,7 @@ const fetchHomeData = async () => {
     const catRes = await axios.get('/api/categories')
     // Extract top-level or featured categories
     const allCats = catRes.data.data || []
-    categories.value = allCats.filter((c) => c.is_featured || !c.parent_id).slice(0, 6)
+    categories.value = allCats.filter((c) => c.is_featured || !c.parent_id).slice(0, 10)
   } catch (err) {
     console.warn('Failed to load categories:', err)
   }
@@ -156,7 +156,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="space-y-4 sm:space-y-8 pb-16">
+  <div class="w-full min-w-0 overflow-x-clip space-y-4 sm:space-y-8 pb-16">
     <!-- SECTION 1: HERO SLIDER -->
     <div v-if="loadingHero" class="w-full min-h-[500px] sm:min-h-[580px] lg:min-h-[640px] bg-surface animate-pulse flex items-center justify-center">
       <div class="w-8 h-8 rounded-full border-2 border-brand border-t-transparent animate-spin"></div>
@@ -274,7 +274,7 @@ onMounted(() => {
       <!-- Horizontal scroll container -->
       <div
         ref="bestSellersContainer"
-        class="flex gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 snap-x snap-mandatory scroll-smooth no-scrollbar"
+        class="flex gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x snap-mandatory scroll-smooth no-scrollbar"
       >
         <div
           v-for="product in bestSellerProducts"
@@ -294,7 +294,7 @@ onMounted(() => {
 
     <!-- SECTION 8: NEWSLETTER SIGNUP -->
     <section class="max-w-container mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
-      <div class="bg-surface border border-line rounded-card p-8 sm:p-14 text-center max-w-3xl mx-auto shadow-sm">
+      <div class="bg-surface border border-line rounded-card p-5 sm:p-14 text-center max-w-3xl mx-auto shadow-sm">
         <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-brand/10 text-brand mb-4">
           <Sparkles class="w-6 h-6" />
         </div>

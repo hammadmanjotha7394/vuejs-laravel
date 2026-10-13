@@ -327,7 +327,7 @@ const footerMenuItems = computed(() => {
         <!-- Payment methods badges -->
         <div
           v-if="settingsStore.headerFooter?.payment_icons !== false"
-          class="flex items-center gap-2"
+          class="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-center sm:justify-end"
           aria-label="Accepted payment methods"
         >
           <span class="px-2 py-0.5 rounded bg-white border border-line text-[10px] font-bold text-gray-700">

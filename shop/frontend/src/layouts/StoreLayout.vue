@@ -54,7 +54,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col bg-page text-ink selection:bg-brand/20 selection:text-brand">
+  <div class="min-h-screen flex flex-col bg-page text-ink selection:bg-brand/20 selection:text-brand overflow-x-hidden w-full max-w-full">
     <!-- Global top progress bar -->
     <GlobalLoadingBar />
 
@@ -69,7 +69,7 @@ onMounted(() => {
     />
 
     <!-- Main View Outlet with Error Boundary -->
-    <main class="flex-1 w-full" id="main-content">
+    <main class="flex-1 w-full min-w-0 overflow-x-hidden" id="main-content">
       <ErrorBoundary>
         <router-view />
       </ErrorBoundary>
