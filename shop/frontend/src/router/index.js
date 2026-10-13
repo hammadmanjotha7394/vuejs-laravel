@@ -21,6 +21,9 @@ import CatalogView from '@/views/store/CatalogView.vue'
 import ProductDetailView from '@/views/store/ProductDetailView.vue'
 import CartView from '@/views/store/CartView.vue'
 import WishlistView from '@/views/store/WishlistView.vue'
+import CheckoutView from '@/views/store/CheckoutView.vue'
+import CheckoutSuccessView from '@/views/store/CheckoutSuccessView.vue'
+import CheckoutCancelView from '@/views/store/CheckoutCancelView.vue'
 
 const routes = [
   // Storefront Layout Routes
@@ -72,6 +75,21 @@ const routes = [
         path: 'wishlist',
         name: 'wishlist',
         component: WishlistView,
+      },
+      {
+        path: 'checkout',
+        name: 'checkout',
+        component: CheckoutView,
+      },
+      {
+        path: 'checkout/success',
+        name: 'checkout.success',
+        component: CheckoutSuccessView,
+      },
+      {
+        path: 'checkout/cancel',
+        name: 'checkout.cancel',
+        component: CheckoutCancelView,
       },
       // 404 Catch-All inside Storefront Shell
       {

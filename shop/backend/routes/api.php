@@ -9,11 +9,13 @@ use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CartController;
+use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\PublicCategoryController;
 use App\Http\Controllers\Api\PublicMarketingController;
 use App\Http\Controllers\Api\PublicMenuController;
 use App\Http\Controllers\Api\PublicProductController;
 use App\Http\Controllers\Api\PublicSettingController;
+use App\Http\Controllers\Api\StripeWebhookController;
 use App\Http\Controllers\Api\WishlistController;
 use Illuminate\Support\Facades\Route;
 
@@ -63,6 +65,12 @@ Route::get('/wishlist', [WishlistController::class, 'index']);
 Route::post('/wishlist/toggle', [WishlistController::class, 'toggle']);
 Route::post('/wishlist/sync', [WishlistController::class, 'sync']);
 Route::delete('/wishlist/{productId}', [WishlistController::class, 'destroy']);
+
+// Checkout & Stripe Webhook Routes
+Route::get('/checkout/addresses', [CheckoutController::class, 'addresses']);
+Route::post('/checkout', [CheckoutController::class, 'store']);
+Route::get('/checkout/verify', [CheckoutController::class, 'verify']);
+Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle']);
 
 // Guest Auth Routes
 Route::post('/register', [AuthController::class, 'register']);
@@ -143,5 +151,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/products/{product}', [ProductController::class, 'destroy'])->middleware('permission:products.delete');
         Route::post('/products/{product}/duplicate', [ProductController::class, 'duplicate'])->middleware('permission:products.create');
         Route::post('/products/{product}/variants/bulk-edit', [ProductController::class, 'bulkEditVariants'])->middleware('permission:products.update');
+
+        // Orders & Refunds
+        Route::post('/orders/{order}/refund', [CheckoutController::class, 'refund'])->middleware('permission:orders.refund');
     });
 });
