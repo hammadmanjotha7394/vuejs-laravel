@@ -22,10 +22,16 @@ class CartService
             $cart = Cart::where('user_id', $user->id)->first();
 
             if (! $cart) {
-                $cart = Cart::create([
-                    'token' => Str::random(40),
-                    'user_id' => $user->id,
-                ]);
+                // If a guest cart with this token exists and is unclaimed, claim it for this user
+                if ($token) {
+                    $existingGuestCart = Cart::where('token', $token)->whereNull('user_id')->first();
+                    if ($existingGuestCart) {
+                        $existingGuestCart->update(['user_id' => $user->id]);
+                        return $existingGuestCart;
+                    }
+                }
+
+                $cart = self::createCartSafely($user->id);
             }
 
             // If a guest token was provided, merge guest items into the user's cart
@@ -36,17 +42,76 @@ class CartService
             return $cart;
         }
 
+        // Guest user resolution:
         if ($token) {
-            $cart = Cart::where('token', $token)->whereNull('user_id')->first();
-            if ($cart) {
-                return $cart;
+            $existing = Cart::where('token', $token)->first();
+
+            if ($existing) {
+                // If this cart is a guest cart (not assigned to a registered user), reuse it!
+                if (is_null($existing->user_id)) {
+                    return $existing;
+                }
+
+                // If this cart was already claimed by a registered user,
+                // the guest CANNOT reuse this token due to the unique key constraint on `carts.token`.
+                // Invalidate $token so a brand-new unique token is created for this guest.
+                $token = null;
             }
         }
 
-        return Cart::create([
-            'token' => $token ?: Str::random(40),
-            'user_id' => null,
-        ]);
+        return self::createCartSafely(null, $token);
+    }
+
+    /**
+     * Safely create a cart, handling database unique token collisions and race conditions.
+     */
+    private static function createCartSafely(?int $userId = null, ?string $preferredToken = null): Cart
+    {
+        $token = $preferredToken ?: Str::random(40);
+
+        try {
+            return Cart::create([
+                'token' => $token,
+                'user_id' => $userId,
+            ]);
+        } catch (\Illuminate\Database\QueryException $e) {
+            $errorCode = $e->errorInfo[1] ?? null;
+
+            // MySQL error 1062 is duplicate entry (race condition between concurrent requests or collision)
+            if ($errorCode == 1062) {
+                // If race condition: check if a cart with this token was just created concurrently
+                if ($token) {
+                    $concurrentCart = Cart::where('token', $token)->first();
+                    if ($concurrentCart && (int) $concurrentCart->user_id === (int) $userId) {
+                        return $concurrentCart;
+                    }
+                }
+
+                // If user_id is set, check if user's cart was created concurrently
+                if ($userId) {
+                    $userCart = Cart::where('user_id', $userId)->first();
+                    if ($userCart) {
+                        return $userCart;
+                    }
+                }
+
+                // Otherwise, generate a fresh guaranteed-unique token and retry
+                for ($attempt = 0; $attempt < 3; $attempt++) {
+                    try {
+                        return Cart::create([
+                            'token' => Str::random(40),
+                            'user_id' => $userId,
+                        ]);
+                    } catch (\Illuminate\Database\QueryException $ex) {
+                        if (($ex->errorInfo[1] ?? null) != 1062) {
+                            throw $ex;
+                        }
+                    }
+                }
+            }
+
+            throw $e;
+        }
     }
 
     /**
