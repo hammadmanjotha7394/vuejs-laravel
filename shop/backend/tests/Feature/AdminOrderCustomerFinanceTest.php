@@ -4,12 +4,68 @@ namespace Tests\Feature;
 
 use App\Models\EmailLog;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\User;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class AdminOrderCustomerFinanceTest extends TestCase
 {
+    use DatabaseTransactions;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        if (Order::count() === 0) {
+            $customer = User::where('email', 'customer@shop.test')->first();
+            $product = Product::first();
+            $order = Order::create([
+                'order_number' => 'ORD-20261013-SEED01',
+                'user_id' => $customer?->id,
+                'guest_email' => $customer?->email ?? 'customer@shop.test',
+                'status' => 'paid',
+                'payment_status' => 'paid',
+                'payment_method' => 'stripe',
+                'stripe_payment_intent_id' => 'pi_test_admin_order_seed',
+                'subtotal' => 120.00,
+                'discount_total' => 0.00,
+                'shipping_total' => 0.00,
+                'tax_total' => 0.00,
+                'grand_total' => 120.00,
+                'currency' => 'USD',
+                'shipping_address_json' => [
+                    'full_name' => 'Elena Rostova',
+                    'line1' => '142 Mercer St',
+                    'city' => 'New York',
+                    'postal_code' => '10012',
+                    'country' => 'US',
+                ],
+                'billing_address_json' => [
+                    'full_name' => 'Elena Rostova',
+                    'line1' => '142 Mercer St',
+                    'city' => 'New York',
+                    'postal_code' => '10012',
+                    'country' => 'US',
+                ],
+                'paid_at' => now(),
+            ]);
+
+            if ($product) {
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $product->id,
+                    'product_name_snapshot' => $product->name,
+                    'sku_snapshot' => $product->sku ?? 'SKU-SEED-01',
+                    'unit_price' => 120.00,
+                    'quantity' => 1,
+                    'line_total' => 120.00,
+                ]);
+            }
+        }
+    }
+
     public function test_changing_order_to_shipped_sends_shipped_email_and_logs_timeline(): void
     {
         $om = User::where('email', 'order@shop.test')->first();

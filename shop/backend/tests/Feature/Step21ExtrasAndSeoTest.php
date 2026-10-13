@@ -11,13 +11,13 @@ use App\Models\Product;
 use App\Models\User;
 use App\Services\HtmlSanitizer;
 use Database\Seeders\RoleAndPermissionSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class Step21ExtrasAndSeoTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected function setUp(): void
     {
@@ -29,6 +29,8 @@ class Step21ExtrasAndSeoTest extends TestCase
     {
         Mail::fake();
 
+        $initialCount = ContactMessage::count();
+
         // 1. Contact form honeypot blocks bots silently
         $this->postJson('/api/contact', [
             'name' => 'Spam Bot',
@@ -37,7 +39,7 @@ class Step21ExtrasAndSeoTest extends TestCase
             'message' => 'Buy spam',
             'website' => 'https://spambot.example.com',
         ])->assertOk();
-        $this->assertSame(0, ContactMessage::count());
+        $this->assertSame($initialCount, ContactMessage::count());
 
         // Human submission saves and triggers admin email
         $this->postJson('/api/contact', [
@@ -46,7 +48,7 @@ class Step21ExtrasAndSeoTest extends TestCase
             'subject' => 'Care instructions for Merino Wool',
             'message' => 'Can this sweater be hand-washed in cold water?',
         ])->assertCreated();
-        $this->assertSame(1, ContactMessage::count());
+        $this->assertSame($initialCount + 1, ContactMessage::count());
 
         // 2. Back-in-stock Notify Me triggers email when stock returns
         $product = Product::create([

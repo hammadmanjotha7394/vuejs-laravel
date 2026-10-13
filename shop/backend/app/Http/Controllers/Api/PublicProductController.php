@@ -108,7 +108,7 @@ class PublicProductController extends Controller
             'message' => $moderationOn
                 ? 'Thank you! Your review has been submitted and is awaiting moderation.'
                 : 'Thank you! Your review has been published.',
-            'data' => $review->is_approved ? Review::formatForPublic($review) : null,
+            'data' => Review::formatForPublic($review),
             'is_approved' => (bool) $review->is_approved,
             'rating_summary' => $ratingSummary,
         ], 201);
