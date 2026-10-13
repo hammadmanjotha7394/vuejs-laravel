@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CheckoutController;
+use App\Http\Controllers\Api\CustomerAccountController;
 use App\Http\Controllers\Api\PublicCategoryController;
 use App\Http\Controllers\Api\PublicMarketingController;
 use App\Http\Controllers\Api\PublicMenuController;
@@ -83,6 +84,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::put('/profile', [AuthController::class, 'updateProfile']);
     Route::put('/password', [AuthController::class, 'changePassword']);
+
+    // Customer Account Area (Strictly user-scoped)
+    Route::prefix('account')->group(function () {
+        Route::get('/overview', [CustomerAccountController::class, 'overview']);
+        Route::get('/orders', [CustomerAccountController::class, 'orders']);
+        Route::get('/orders/{orderNumber}', [CustomerAccountController::class, 'orderShow']);
+        Route::post('/orders/{orderNumber}/cancel-request', [CustomerAccountController::class, 'requestCancelOrder']);
+        Route::get('/addresses', [CustomerAccountController::class, 'addresses']);
+        Route::post('/addresses', [CustomerAccountController::class, 'storeAddress']);
+        Route::put('/addresses/{id}', [CustomerAccountController::class, 'updateAddress']);
+        Route::delete('/addresses/{id}', [CustomerAccountController::class, 'destroyAddress']);
+        Route::post('/addresses/{id}/default', [CustomerAccountController::class, 'setDefaultAddress']);
+        Route::get('/reviews', [CustomerAccountController::class, 'reviews']);
+        Route::delete('/', [CustomerAccountController::class, 'deleteAccount']);
+    });
 
     // Admin Routes
     Route::prefix('admin')->group(function () {

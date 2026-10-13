@@ -25,6 +25,15 @@ import CheckoutView from '@/views/store/CheckoutView.vue'
 import CheckoutSuccessView from '@/views/store/CheckoutSuccessView.vue'
 import CheckoutCancelView from '@/views/store/CheckoutCancelView.vue'
 
+import AccountLayout from '@/views/store/account/AccountLayout.vue'
+import AccountOverviewView from '@/views/store/account/AccountOverviewView.vue'
+import AccountOrdersView from '@/views/store/account/AccountOrdersView.vue'
+import AccountOrderDetailView from '@/views/store/account/AccountOrderDetailView.vue'
+import AccountAddressesView from '@/views/store/account/AccountAddressesView.vue'
+import AccountProfileView from '@/views/store/account/AccountProfileView.vue'
+import AccountWishlistView from '@/views/store/account/AccountWishlistView.vue'
+import AccountReviewsView from '@/views/store/account/AccountReviewsView.vue'
+
 const routes = [
   // Storefront Layout Routes
   {
@@ -90,6 +99,49 @@ const routes = [
         path: 'checkout/cancel',
         name: 'checkout.cancel',
         component: CheckoutCancelView,
+      },
+      // Customer Account Area (Protected by requiresAuth)
+      {
+        path: 'account',
+        component: AccountLayout,
+        meta: { requiresAuth: true },
+        children: [
+          {
+            path: '',
+            name: 'account.overview',
+            component: AccountOverviewView,
+          },
+          {
+            path: 'orders',
+            name: 'account.orders',
+            component: AccountOrdersView,
+          },
+          {
+            path: 'orders/:number',
+            name: 'account.order.detail',
+            component: AccountOrderDetailView,
+          },
+          {
+            path: 'addresses',
+            name: 'account.addresses',
+            component: AccountAddressesView,
+          },
+          {
+            path: 'profile',
+            name: 'account.profile',
+            component: AccountProfileView,
+          },
+          {
+            path: 'wishlist',
+            name: 'account.wishlist',
+            component: AccountWishlistView,
+          },
+          {
+            path: 'reviews',
+            name: 'account.reviews',
+            component: AccountReviewsView,
+          },
+        ],
       },
       // 404 Catch-All inside Storefront Shell
       {

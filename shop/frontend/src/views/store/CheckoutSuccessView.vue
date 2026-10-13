@@ -324,7 +324,14 @@ useHead({
         </div>
 
         <!-- Navigation Actions -->
-        <div class="flex items-center justify-center gap-4 pt-4">
+        <div class="flex flex-wrap items-center justify-center gap-3 pt-4">
+          <RouterLink
+            v-if="authStore.isAuthenticated && order?.order_number"
+            :to="`/account/orders/${order.order_number}`"
+            class="px-6 py-3 rounded-pill border border-line bg-white text-ink text-xs sm:text-sm font-semibold hover:border-brand hover:text-brand transition inline-flex items-center gap-2 shadow-xs"
+          >
+            <span>View Order & Invoice</span>
+          </RouterLink>
           <RouterLink
             to="/shop"
             class="px-6 py-3 rounded-pill bg-brand text-white text-xs sm:text-sm font-semibold hover:opacity-90 transition inline-flex items-center gap-2 shadow-sm"

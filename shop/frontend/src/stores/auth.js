@@ -98,6 +98,14 @@ export const useAuthStore = defineStore('auth', {
       return response.data
     },
 
+    async deleteAccount(password) {
+      const response = await apiClient.delete('/account', {
+        data: { password },
+      })
+      this.clearUser()
+      return response.data
+    },
+
     setUser(userData) {
       if (!userData) {
         this.clearUser()
