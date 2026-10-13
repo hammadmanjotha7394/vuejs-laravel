@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FinanceController;
 use App\Http\Controllers\Admin\MenuController;
+use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingController;
@@ -123,6 +125,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Finance Reports & Metrics
         Route::get('/finance/summary', [FinanceController::class, 'summary'])->middleware('permission:finance.view');
+        Route::get('/finance/export-csv', [FinanceController::class, 'exportCsv'])->middleware('permission:finance.view');
 
         // Settings System
         Route::get('/settings', [SettingController::class, 'index'])->middleware('permission:settings.view');
@@ -174,7 +177,24 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/products/{product}/duplicate', [ProductController::class, 'duplicate'])->middleware('permission:products.create');
         Route::post('/products/{product}/variants/bulk-edit', [ProductController::class, 'bulkEditVariants'])->middleware('permission:products.update');
 
-        // Orders & Refunds
+        // Orders, Fulfillment, Refunds & Low-Stock Inventory
+        Route::get('/orders', [OrderController::class, 'index'])->middleware('permission:orders.view');
+        Route::get('/orders/{order}', [OrderController::class, 'show'])->middleware('permission:orders.view');
+        Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])->middleware('permission:orders.update');
+        Route::patch('/orders/{order}/tracking', [OrderController::class, 'updateTracking'])->middleware('permission:orders.update');
+        Route::post('/orders/{order}/notes', [OrderController::class, 'addNote'])->middleware('permission:orders.update');
+        Route::post('/orders/{order}/resend-confirmation', [OrderController::class, 'resendConfirmation'])->middleware('permission:orders.update');
         Route::post('/orders/{order}/refund', [CheckoutController::class, 'refund'])->middleware('permission:orders.refund');
+
+        // Inventory / Low-Stock Management
+        Route::get('/inventory/low-stock', [OrderController::class, 'lowStock'])->middleware('permission:orders.view|products.view');
+        Route::patch('/inventory/stock', [OrderController::class, 'updateStock'])->middleware('permission:orders.update|products.update');
+        Route::post('/inventory/low-stock-alert', [OrderController::class, 'sendLowStockAlert'])->middleware('permission:orders.update|products.update');
+
+        // Customer Directory & Profiles
+        Route::get('/customers', [CustomerController::class, 'index'])->middleware('permission:users.view');
+        Route::get('/customers/export-csv', [CustomerController::class, 'exportCsv'])->middleware('permission:users.view');
+        Route::get('/customers/{customer}', [CustomerController::class, 'show'])->middleware('permission:users.view');
+        Route::put('/customers/{customer}', [CustomerController::class, 'update'])->middleware('permission:users.update|orders.update');
     });
 });

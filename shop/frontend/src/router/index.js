@@ -175,12 +175,14 @@ const routes = [
       {
         path: 'orders',
         name: 'admin.orders',
-        component: () => import('@/views/admin/AdminModulePlaceholderView.vue'),
-        meta: {
-          permission: 'orders.view',
-          title: 'Order Management',
-          description: 'Manage customer orders, update fulfillment status, add tracking numbers, and issue Stripe refunds.',
-        },
+        component: () => import('@/views/admin/OrdersView.vue'),
+        meta: { permission: 'orders.view' },
+      },
+      {
+        path: 'orders/:id',
+        name: 'admin.orders.detail',
+        component: () => import('@/views/admin/OrderDetailView.vue'),
+        meta: { permission: 'orders.view' },
       },
       {
         path: 'products',
@@ -219,12 +221,8 @@ const routes = [
       {
         path: 'customers',
         name: 'admin.customers',
-        component: () => import('@/views/admin/AdminModulePlaceholderView.vue'),
-        meta: {
-          permission: 'users.view',
-          title: 'Customers Directory',
-          description: 'View registered customer profiles, order history, internal notes, and CSV exports.',
-        },
+        component: () => import('@/views/admin/CustomersView.vue'),
+        meta: { permission: 'users.view' },
       },
       {
         path: 'reviews',

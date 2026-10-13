@@ -518,7 +518,9 @@ onMounted(() => {
         empty-description="Incoming customer orders will appear here in real time."
       >
         <template #cell-order_number="{ row }">
-          <span class="font-mono font-bold text-ink">{{ row.order_number }}</span>
+          <RouterLink :to="`/admin/orders/${row.id}`" class="font-mono font-bold text-brand hover:underline">
+            {{ row.order_number }}
+          </RouterLink>
         </template>
 
         <template #cell-customer_name="{ row }">

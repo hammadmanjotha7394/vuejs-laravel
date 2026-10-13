@@ -469,6 +469,7 @@ class CheckoutService
 
         $order->status = 'refunded';
         $order->payment_status = 'refunded';
+        $order->refunded_amount = $order->grand_total;
         $order->save();
 
         OrderStatusHistory::create([
@@ -527,9 +528,11 @@ class CheckoutService
             }
         }
 
-        $isPartial = $refundAmount < (float) $order->grand_total;
+        $totalRefunded = min((float) $order->grand_total, round((float) $order->refunded_amount + $refundAmount, 2));
+        $isPartial = $totalRefunded < (float) $order->grand_total;
         $order->status = 'refunded';
         $order->payment_status = $isPartial ? 'partially_refunded' : 'refunded';
+        $order->refunded_amount = $totalRefunded;
         $order->save();
 
         $note = $isPartial
