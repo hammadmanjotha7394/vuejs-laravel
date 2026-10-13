@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\EmailService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -32,5 +33,8 @@ class AppServiceProvider extends ServiceProvider
                 ], 429);
             });
         });
+
+        // Apply Hostinger SMTP settings saved in admin at runtime
+        EmailService::applyRuntimeSmtpConfig();
     }
 }

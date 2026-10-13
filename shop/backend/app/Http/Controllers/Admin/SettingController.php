@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Mail\TestMail;
 use App\Models\EmailLog;
+use App\Services\EmailService;
 use App\Services\SettingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -198,6 +199,7 @@ class SettingController extends Controller
 
         try {
             // Re-apply runtime config and purge mailer
+            EmailService::applyRuntimeSmtpConfig();
             app('mail.manager')->forgetMailers();
 
             Mail::to($recipient)->send(new TestMail($siteName, now()->toDateTimeString()));

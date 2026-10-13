@@ -4,11 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
-use App\Models\EmailLog;
 use App\Models\Order;
 use App\Models\OrderStatusHistory;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Services\EmailService;
 use App\Services\SettingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -292,13 +292,12 @@ class OrderController extends Controller
             ], 422);
         }
 
-        EmailLog::create([
-            'to' => $recipientEmail,
-            'subject' => "Order Confirmed — {$order->order_number}",
-            'template_key' => 'order_confirmed',
-            'status' => 'sent',
-            'sent_at' => now(),
-        ]);
+        EmailService::sendOrderEmail(
+            $order,
+            'order_confirmed',
+            $recipientEmail,
+            "Order Confirmed — {$order->order_number}"
+        );
 
         OrderStatusHistory::create([
             'order_id' => $order->id,
@@ -422,13 +421,25 @@ class OrderController extends Controller
 
         $count = $lowStockProducts->count();
 
-        EmailLog::create([
-            'to' => $recipient,
-            'subject' => "Low Stock Inventory Alert ({$count} items below threshold)",
-            'template_key' => 'low_stock_alert',
-            'status' => 'sent',
-            'sent_at' => now(),
-        ]);
+        $rows = '';
+        foreach ($lowStockProducts as $item) {
+            $name = e($item->name);
+            $sku = e($item->sku);
+            $qty = (int) $item->stock_qty;
+            $thresh = (int) $item->low_stock_threshold;
+            $rows .= "<tr><td style='padding:8px 12px;border-bottom:1px solid #EAE8E3;'>{$name} ({$sku})</td><td align='right' style='padding:8px 12px;border-bottom:1px solid #EAE8E3;font-weight:600;color:#DC2626;'>{$qty} / {$thresh}</td></tr>";
+        }
+        $itemsTable = "<table width='100%' cellpadding='0' cellspacing='0' style='border:1px solid #EAE8E3;border-radius:8px;border-collapse:collapse;'>{$rows}</table>";
+
+        EmailService::sendTemplate(
+            'low_stock_alert',
+            $recipient,
+            [
+                'items_count' => (string) $count,
+                'items_table' => $itemsTable,
+            ],
+            "Low Stock Inventory Alert ({$count} items below threshold)"
+        );
 
         return response()->json([
             'message' => "Low-stock alert email for {$count} item(s) sent to {$recipient}.",
@@ -479,12 +490,11 @@ class OrderController extends Controller
             'subject' => "Order Status Update — {$order->order_number}",
         ];
 
-        EmailLog::create([
-            'to' => $recipientEmail,
-            'subject' => $template['subject'],
-            'template_key' => $template['template_key'],
-            'status' => 'sent',
-            'sent_at' => now(),
-        ]);
+        EmailService::sendOrderEmail(
+            $order,
+            $template['template_key'],
+            $recipientEmail,
+            $template['subject']
+        );
     }
 }

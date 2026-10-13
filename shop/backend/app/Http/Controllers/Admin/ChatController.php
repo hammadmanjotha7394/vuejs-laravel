@@ -6,15 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Cart;
 use App\Models\ChatConversation;
 use App\Models\ChatMessage;
-use App\Models\EmailLog;
 use App\Models\Order;
 use App\Models\User;
+use App\Services\EmailService;
 use App\Services\ImageService;
 use App\Services\SettingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Mail;
 
 class ChatController extends Controller
 {
@@ -240,31 +239,16 @@ class ChatController extends Controller
         if ($conversation->visitor_email && $isVisitorOffline && $cleanBody !== '') {
             $siteName = SettingService::get('site_name', 'Atelier Store');
             $subject = "New reply from {$siteName} Customer Care";
-            try {
-                Mail::raw(
-                    'Hello '.($conversation->visitor_name ?: 'there').",\n\nOur team replied to your chat inquiry:\n\n\"{$cleanBody}\"\n\nWarm regards,\n{$siteName}",
-                    function ($m) use ($conversation, $subject) {
-                        $m->to($conversation->visitor_email)->subject($subject);
-                    }
-                );
-                EmailLog::create([
-                    'to' => $conversation->visitor_email,
-                    'subject' => $subject,
-                    'template_key' => 'chat_offline_reply',
-                    'status' => 'sent',
-                    'sent_at' => now(),
-                ]);
-                $emailedOfflineVisitor = true;
-            } catch (\Throwable $e) {
-                EmailLog::create([
-                    'to' => $conversation->visitor_email,
-                    'subject' => $subject,
-                    'template_key' => 'chat_offline_reply',
-                    'status' => 'failed',
-                    'error' => substr($e->getMessage(), 0, 500),
-                    'sent_at' => now(),
-                ]);
-            }
+            $log = EmailService::sendTemplate(
+                'chat_offline_reply',
+                $conversation->visitor_email,
+                [
+                    'customer_name' => $conversation->visitor_name ?: 'Valued Customer',
+                    'message_body' => e($cleanBody),
+                ],
+                $subject
+            );
+            $emailedOfflineVisitor = $log && $log->status === 'sent';
         }
 
         $message->load('sender:id,name');

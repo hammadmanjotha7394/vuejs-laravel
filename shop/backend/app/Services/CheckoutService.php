@@ -6,7 +6,6 @@ use App\Models\ActivityLog;
 use App\Models\Address;
 use App\Models\Cart;
 use App\Models\Coupon;
-use App\Models\EmailLog;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderStatusHistory;
@@ -383,27 +382,25 @@ class CheckoutService
                 }
             }
 
-            // Queue / Log Customer Order Confirmation Email
+            // Send & Log Customer Order Confirmation Email using editable template
             $recipientEmail = $lockedOrder->guest_email ?: $lockedOrder->user?->email;
             if ($recipientEmail) {
-                EmailLog::create([
-                    'to' => $recipientEmail,
-                    'subject' => "Order Confirmed — {$lockedOrder->order_number}",
-                    'template_key' => 'order_confirmed',
-                    'status' => 'sent',
-                    'sent_at' => now(),
-                ]);
+                EmailService::sendOrderEmail(
+                    $lockedOrder,
+                    'order_confirmed',
+                    $recipientEmail,
+                    "Order Confirmed — {$lockedOrder->order_number}"
+                );
             }
 
-            // Queue / Log Admin New Order Alert
+            // Send & Log Admin New Order Alert using editable template
             $adminEmail = (string) SettingService::get('support_email', 'admin@boutique.com');
-            EmailLog::create([
-                'to' => $adminEmail,
-                'subject' => "New Order Received — {$lockedOrder->order_number}",
-                'template_key' => 'admin_new_order',
-                'status' => 'sent',
-                'sent_at' => now(),
-            ]);
+            EmailService::sendOrderEmail(
+                $lockedOrder,
+                'admin_new_order',
+                $adminEmail,
+                "New Order Received — {$lockedOrder->order_number}"
+            );
 
             return $lockedOrder;
         });
@@ -480,13 +477,12 @@ class CheckoutService
 
         $recipientEmail = $order->guest_email ?: $order->user?->email;
         if ($recipientEmail) {
-            EmailLog::create([
-                'to' => $recipientEmail,
-                'subject' => "Refund Processed — {$order->order_number}",
-                'template_key' => 'order_refunded',
-                'status' => 'sent',
-                'sent_at' => now(),
-            ]);
+            EmailService::sendOrderEmail(
+                $order,
+                'order_refunded',
+                $recipientEmail,
+                "Refund Processed — {$order->order_number}"
+            );
         }
 
         return $order;
@@ -563,13 +559,12 @@ class CheckoutService
 
         $recipientEmail = $order->guest_email ?: $order->user?->email;
         if ($recipientEmail) {
-            EmailLog::create([
-                'to' => $recipientEmail,
-                'subject' => "Refund Processed — {$order->order_number}",
-                'template_key' => 'order_refunded',
-                'status' => 'sent',
-                'sent_at' => now(),
-            ]);
+            EmailService::sendOrderEmail(
+                $order,
+                'order_refunded',
+                $recipientEmail,
+                "Refund Processed — {$order->order_number}"
+            );
         }
 
         return $order->fresh(['items', 'statusHistory']);

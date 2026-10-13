@@ -296,12 +296,8 @@ const routes = [
       {
         path: 'email-templates',
         name: 'admin.email-templates',
-        component: () => import('@/views/admin/AdminModulePlaceholderView.vue'),
-        meta: {
-          permission: 'mail.manage',
-          title: 'Email Templates & Logs',
-          description: 'Customize transactional HTML email templates, preview variables, and inspect SMTP delivery logs.',
-        },
+        component: () => import('@/views/admin/EmailTemplatesView.vue'),
+        meta: { permission: 'mail.manage' },
       },
       {
         path: 'activity-log',

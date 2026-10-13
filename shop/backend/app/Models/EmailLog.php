@@ -12,6 +12,7 @@ class EmailLog extends Model
     protected $fillable = [
         'to',
         'subject',
+        'body_html',
         'template_key',
         'status',
         'error',

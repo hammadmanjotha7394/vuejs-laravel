@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ChatController as AdminChatController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\EmailTemplateController;
 use App\Http\Controllers\Admin\FinanceController;
 use App\Http\Controllers\Admin\MarketingController;
 use App\Http\Controllers\Admin\MenuController;
@@ -255,5 +256,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/chat/canned-responses', [AdminChatController::class, 'cannedResponses'])->middleware('permission:chat.manage');
         Route::put('/chat/canned-responses', [AdminChatController::class, 'updateCannedResponses'])->middleware('permission:chat.manage');
         Route::post('/chat/upload-attachment', [AdminChatController::class, 'uploadAttachment'])->middleware('permission:chat.manage');
+
+        // Email Templates, Previews, Test Dispatches & Delivery Logs (Hostinger SMTP)
+        Route::get('/email-templates', [EmailTemplateController::class, 'index'])->middleware('permission:mail.manage|settings.view');
+        Route::put('/email-templates/{emailTemplate}', [EmailTemplateController::class, 'update'])->middleware('permission:mail.manage');
+        Route::post('/email-templates/{emailTemplate}/reset', [EmailTemplateController::class, 'resetToDefault'])->middleware('permission:mail.manage');
+        Route::post('/email-templates/{emailTemplate}/preview', [EmailTemplateController::class, 'preview'])->middleware('permission:mail.manage|settings.view');
+        Route::post('/email-templates/{emailTemplate}/test', [EmailTemplateController::class, 'sendTest'])->middleware('permission:mail.manage');
+        Route::get('/email-logs', [EmailTemplateController::class, 'logs'])->middleware('permission:mail.manage|settings.view');
+        Route::post('/email-logs/{emailLog}/resend', [EmailTemplateController::class, 'resendLog'])->middleware('permission:mail.manage');
     });
 });
