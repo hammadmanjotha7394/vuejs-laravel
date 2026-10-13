@@ -13,7 +13,6 @@
 **/.vite/
 
 # Builds
-shop/backend/public/app/
 shop/backend/public/build/
 shop/backend/public/storage
 shop/backend/storage/*.key
